@@ -81,7 +81,7 @@
     <input id="user-input" type="text" placeholder="Type a message..."/>
     <button id="sendBtn">Send</button>
     <button id="replayBtn">Replay</button>
-    <div id="playAllContainer"></div>
+    <div id="playAllContainer"></div> <!-- 🔁 Echo Loop Butto will go here -->
     <select id="voiceSelect">
       <option value="21m00Tcm4TlvDq8ikWAM">Rachel</option>
       <option value="EXAVITQu4vr4xnSDxMaL">Dad/Child</option>
@@ -96,7 +96,7 @@
     <button id="toggleSort">Sort: Newest First</button>
   </div>
 
-  <div id="cloudToggleContainer" style="margin-top: 10px;"></div>
+  <div id="cloudToggleContainer" style="margin-top: 10px;"></div> <!-- ☁️ Toggle Button will go here -->
 
   <button id="downloadBtn">Download .md</button>
   <button id="exportJson">Export JSON</button>
@@ -121,6 +121,12 @@
 
   <ul id="memory-log"></ul>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <!-- EternalEcho Logic -->
   <script src="script.js"></script>
 </body>
 </html>
