@@ -193,7 +193,7 @@ function saveToFirebase(entry) {
   if (!firebaseUser || !entry) return;
   db.collection("users").doc(firebaseUser.uid).collection("memories").add({
     date: entry.date,
-    line: entry.line,
+    line: entry.line,dw
     timestamp: new Date()
   }).catch(console.error);
 }
