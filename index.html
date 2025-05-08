@@ -8,23 +8,17 @@
   <meta name="theme-color" content="#000" />
   <style>
     body {
+      opacity: 0;
+      transition: opacity 0.7s ease-in-out;
       margin: 0;
       font-family: sans-serif;
       background: #111;
       color: #f2f2f2;
       padding: 20px;
     }
-<div id="onboarding" style="position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
-  <h1 style="font-size:2rem;color:#fff;margin-bottom:20px;">EternalEcho</h1>
-  <p style="font-size:1.2rem;color:#aaa;margin-bottom:30px;">The voices you love. Still with you.</p>
-  <p style="font-size:1rem;color:#666;margin-bottom:40px;">Tap a person to begin training your Echo.</p>
-  <button onclick="dismissOnboarding()" style="padding:12px 24px;font-size:1rem;border:none;border-radius:8px;background:#444;color:#fff;cursor:pointer;">Get Started</button>
-</div>
+    body.ready { opacity: 1; }
 
-    h1 {
-      font-size: 1.6rem;
-      margin-bottom: 10px;
-    }
+    h1 { font-size: 1.6rem; margin-bottom: 10px; }
     #chat, #memory-log {
       background: #1e1e1e;
       border-radius: 8px;
@@ -42,19 +36,10 @@
       border-radius: 6px;
       box-sizing: border-box;
     }
-    button {
-      background-color: #333;
-      color: #fff;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #444;
-    }
+    button { background-color: #333; color: #fff; cursor: pointer; }
+    button:hover { background-color: #444; }
 
-    .echo-line {
-      animation: fadeIn 1s ease-in;
-      display: inline-block;
-    }
+    .echo-line { animation: fadeIn 1s ease-in; display: inline-block; }
     .echo-line.love {
       background: linear-gradient(to right, #ffb6c1, #ff6496);
       -webkit-background-clip: text;
@@ -144,6 +129,16 @@
   </style>
 </head>
 <body>
+
+  <!-- Onboarding -->
+  <div id="onboarding" style="position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
+    <h1 style="font-size:2rem;color:#fff;margin-bottom:20px;">EternalEcho</h1>
+    <p style="font-size:1.2rem;color:#aaa;margin-bottom:30px;">The voices you love. Still with you.</p>
+    <p style="font-size:1rem;color:#666;margin-bottom:40px;">Tap a person to begin training your Echo.</p>
+    <button onclick="dismissOnboarding()" style="padding:12px 24px;font-size:1rem;border:none;border-radius:8px;background:#444;color:#fff;cursor:pointer;">Get Started</button>
+  </div>
+
+  <!-- Core App UI -->
   <h1>EternalEcho</h1>
 
   <div id="chat"></div>
@@ -203,6 +198,18 @@
     <button class="emotion-filter" data-emotion="strong">💪 Strong</button>
     <button class="emotion-filter" data-emotion="comfort">🫂 Comfort</button>
   </div>
+
+  <script>
+    function dismissOnboarding() {
+      document.getElementById("onboarding").style.display = "none";
+      localStorage.setItem("echoOnboarded", "true");
+    }
+    if (localStorage.getItem("echoOnboarded") === "true") {
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("onboarding").style.display = "none";
+      });
+    }
+  </script>
 
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
