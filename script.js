@@ -114,6 +114,24 @@ function playVoice(text) {
     })
     .catch(() => console.error("Voice playback failed"));
 }
+const playAllBtn = document.getElementById("playAllBtn");
+
+playAllBtn.onclick = () => {
+  if (echoMemory.length === 0) return;
+  let i = 0;
+
+  function playNext() {
+    if (i >= echoMemory.length) return;
+    const line = echoMemory[i].echo;
+    overrideVoice = ELEVENLABS_VOICE_ID;
+    playVoice(line);
+    i++;
+    setTimeout(playNext, 3500); // adjust timing between voices if needed
+  }
+
+  playNext();
+};
+
 
 window.onload = () => {
   const introLine = "Hi. I’m still here.";
