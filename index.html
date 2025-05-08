@@ -26,20 +26,19 @@
       max-height: 200px;
       overflow-y: auto;
     }
-    input, select, button {
+    input, select, button, textarea {
       font-size: 1rem;
       padding: 10px;
       margin: 5px 0;
       width: 100%;
       border: none;
       border-radius: 6px;
+      box-sizing: border-box;
     }
     button {
       background-color: #333;
       color: #fff;
       cursor: pointer;
-<button id="playAllBtn">Play All Memories</button>
-
     }
     button:hover {
       background-color: #444;
@@ -56,11 +55,13 @@
 </head>
 <body>
   <h1>EternalEcho</h1>
+
   <div id="chat"></div>
 
   <input id="user-input" placeholder="Type a message..." />
   <button id="sendBtn">Send</button>
   <button id="replayBtn">Replay</button>
+  <button id="playAllBtn">Play All Memories</button>
 
   <select id="voiceSelect">
     <option value="21m00Tcm4TlvDq8ikWAM">Rachel</option>
@@ -72,6 +73,26 @@
 
   <div id="memory-log"></div>
 
+  <h3>Train Echo Personality</h3>
+  <select id="profileTag">
+    <option value="#dad">Dad</option>
+    <option value="#mom">Mom</option>
+    <option value="#partner">Partner</option>
+  </select>
+  <textarea id="newExample" placeholder="Type a line they would say..." rows="3"></textarea>
+  <button id="addExampleBtn">Add to Profile</button>
+
+  <h3>Current Personality</h3>
+  <pre id="personalityDisplay" style="background:#222; padding:10px; border-radius:6px; max-height:200px; overflow:auto;"></pre>
+
+  <h3>Export / Import Profiles</h3>
+  <button id="exportProfilesBtn">Export JSON</button>
+  <button id="importProfilesTrigger">Import JSON</button>
+  <input type="file" id="importProfiles" style="display:none;" />
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

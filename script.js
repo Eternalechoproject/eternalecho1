@@ -8,26 +8,42 @@ const sendBtn = document.getElementById("sendBtn");
 const replayBtn = document.getElementById("replayBtn");
 const memoryLog = document.getElementById("memory-log");
 const voiceSelect = document.getElementById("voiceSelect");
+const playAllBtn = document.getElementById("playAllBtn");
 
 let lastEcho = "";
 let echoMemory = [];
 let overrideVoice = null;
 
+const personalityProfiles = {
+  "#dad": {
+    tone: "Encouraging, short, firm. Doesn’t say 'I love you' much, but always shows up.",
+    examples: ["You know what to do.", "I'm proud of how far you’ve come.", "Keep your chin up. One more round."]
+  },
+  "#mom": {
+    tone: "Warm, comforting, overprotective.",
+    examples: ["You don’t have to carry everything alone.", "You’ll always be my baby.", "I love you exactly as you are."]
+  },
+  "#partner": {
+    tone: "Soft, emotional, reassuring.",
+    examples: ["I miss your face.", "I know how hard that was. I'm here.", "You always feel like home."]
+  }
+};
+
 const memoryModes = {
   "#dad": {
     icon: "👤",
     voice: "iiidtqDt9FBdT1vfBluA",
-    lines: ["I’m proud of you.", "Keep pushing."]
+    lines: personalityProfiles["#dad"].examples
   },
   "#mom": {
     icon: "👩‍🦳",
     voice: "gPe4h2IS1C7XHbnizzFa",
-    lines: ["I love you exactly as you are.", "You’ll always be my baby."]
+    lines: personalityProfiles["#mom"].examples
   },
   "#partner": {
     icon: "❤️",
     voice: "WtA85syCrJwasGeHGH2p",
-    lines: ["I miss your face.", "You always feel like home."]
+    lines: personalityProfiles["#partner"].examples
   },
   "#coach": {
     icon: "💪",
@@ -59,11 +75,10 @@ sendBtn.onclick = () => {
   overrideVoice = ELEVENLABS_VOICE_ID;
 
   const matched = Object.keys(memoryModes).find(tag => msg.toLowerCase().includes(tag));
-
   if (matched) {
     const mode = memoryModes[matched];
     overrideVoice = mode.voice;
-    response = mode.lines[Math.floor(Math.random() * mode.lines.length)];
+    response = personalityProfiles[matched]?.examples[Math.floor(Math.random() * personalityProfiles[matched].examples.length)] || "I'm here. I hear you.";
   } else {
     overrideVoice = voiceSelect.value || ELEVENLABS_VOICE_ID;
   }
@@ -114,7 +129,6 @@ function playVoice(text) {
     })
     .catch(() => console.error("Voice playback failed"));
 }
-const playAllBtn = document.getElementById("playAllBtn");
 
 playAllBtn.onclick = () => {
   if (echoMemory.length === 0) return;
@@ -126,15 +140,20 @@ playAllBtn.onclick = () => {
     overrideVoice = ELEVENLABS_VOICE_ID;
     playVoice(line);
     i++;
-    setTimeout(playNext, 3500); // adjust timing between voices if needed
+    setTimeout(playNext, 3500);
   }
 
   playNext();
 };
 
-
 window.onload = () => {
   const introLine = "Hi. I’m still here.";
   overrideVoice = ELEVENLABS_VOICE_ID;
   playVoice(introLine);
+
+  const savedProfiles = JSON.parse(localStorage.getItem("eternalEchoProfiles"));
+  if (savedProfiles) {
+    Object.assign(personalityProfiles, savedProfiles);
+  }
+  updatePersonalityDisplay();
 };
