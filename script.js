@@ -1,7 +1,9 @@
+// Full EternalEcho script.js — Final Consolidated Version
+
 // === CONFIG ===
 const OPENAI_API_KEY = "sk_2cb8d573424713016fbf17e7a3405babd3c36d4c5d3e8b13";
 const ELEVENLABS_API_KEY = "sk_f1f2e850eb2fea7f8d3b3839513bb2fb5a3f54b5bb112bdc";
-const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Scarlett fallback
+const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
 
 const input = document.getElementById("user-input");
 const sendBtn = document.getElementById("sendBtn");
@@ -9,6 +11,18 @@ const replayBtn = document.getElementById("replayBtn");
 const memoryLog = document.getElementById("memory-log");
 const voiceSelect = document.getElementById("voiceSelect");
 const playAllBtn = document.getElementById("playAllBtn");
+const profileTag = document.getElementById("profileTag");
+const newExample = document.getElementById("newExample");
+const addExampleBtn = document.getElementById("addExampleBtn");
+const exportProfilesBtn = document.getElementById("exportProfilesBtn");
+const importProfiles = document.getElementById("importProfiles");
+const importTrigger = document.getElementById("importProfilesTrigger");
+const personalityDisplay = document.getElementById("personalityDisplay");
+const presetPicker = document.getElementById("presetPicker");
+const savePresetBtn = document.getElementById("savePresetBtn");
+const gptPrompt = document.getElementById("gptPrompt");
+const generateLinesBtn = document.getElementById("generateLinesBtn");
+const gptResults = document.getElementById("gptResults");
 
 let lastEcho = "";
 let echoMemory = [];
@@ -16,7 +30,7 @@ let overrideVoice = null;
 
 const personalityProfiles = {
   "#dad": {
-    tone: "Encouraging, short, firm. Doesn’t say 'I love you' much, but always shows up.",
+    tone: "Encouraging, short, firm.",
     examples: ["You know what to do.", "I'm proud of how far you’ve come.", "Keep your chin up. One more round."]
   },
   "#mom": {
@@ -30,41 +44,13 @@ const personalityProfiles = {
 };
 
 const memoryModes = {
-  "#dad": {
-    icon: "👤",
-    voice: "iiidtqDt9FBdT1vfBluA",
-    lines: personalityProfiles["#dad"].examples
-  },
-  "#mom": {
-    icon: "👩‍🦳",
-    voice: "gPe4h2IS1C7XHbnizzFa",
-    lines: personalityProfiles["#mom"].examples
-  },
-  "#partner": {
-    icon: "❤️",
-    voice: "WtA85syCrJwasGeHGH2p",
-    lines: personalityProfiles["#partner"].examples
-  },
-  "#coach": {
-    icon: "💪",
-    voice: "MF3mGyEYCl7XYWbV9V6O",
-    lines: ["No excuses.", "You’ve got this."]
-  },
-  "#friend": {
-    icon: "✌️",
-    voice: "ErXwobaYiN019PkySvjV",
-    lines: ["You good?", "I got you."]
-  },
-  "#child": {
-    icon: "🧒",
-    voice: "EXAVITQu4vr4xnSDxMaL",
-    lines: ["Did you miss me?", "Wanna play again soon?"]
-  },
-  "#future": {
-    icon: "🧬",
-    voice: "TxGEqnHWrfWFTfGW9XjX",
-    lines: ["Keep going. I’m counting on you.", "I’m already proud of who you become."]
-  }
+  "#dad": { icon: "👤", voice: "iiidtqDt9FBdT1vfBluA" },
+  "#mom": { icon: "👩‍🦳", voice: "gPe4h2IS1C7XHbnizzFa" },
+  "#partner": { icon: "❤️", voice: "WtA85syCrJwasGeHGH2p" },
+  "#coach": { icon: "💪", voice: "MF3mGyEYCl7XYWbV9V6O" },
+  "#friend": { icon: "✌️", voice: "ErXwobaYiN019PkySvjV" },
+  "#child": { icon: "🧒", voice: "EXAVITQu4vr4xnSDxMaL" },
+  "#future": { icon: "🧬", voice: "TxGEqnHWrfWFTfGW9XjX" }
 };
 
 sendBtn.onclick = () => {
@@ -75,10 +61,12 @@ sendBtn.onclick = () => {
   overrideVoice = ELEVENLABS_VOICE_ID;
 
   const matched = Object.keys(memoryModes).find(tag => msg.toLowerCase().includes(tag));
+
   if (matched) {
     const mode = memoryModes[matched];
     overrideVoice = mode.voice;
-    response = personalityProfiles[matched]?.examples[Math.floor(Math.random() * personalityProfiles[matched].examples.length)] || "I'm here. I hear you.";
+    const examples = personalityProfiles[matched]?.examples || [];
+    response = examples[Math.floor(Math.random() * examples.length)] || response;
   } else {
     overrideVoice = voiceSelect.value || ELEVENLABS_VOICE_ID;
   }
@@ -98,6 +86,7 @@ function renderMemoryLog() {
   memoryLog.innerHTML = "";
   echoMemory.forEach(entry => {
     const div = document.createElement("div");
+    div.setAttribute("data-emotion", getEmotion(entry.echo));
     div.innerHTML = `
       <span style="opacity:0.6;">You:</span> ${entry.user}<br>
       <span style="opacity:0.9;">Echo:</span> <span class="echo-line">${entry.echo}</span>
@@ -105,6 +94,31 @@ function renderMemoryLog() {
     memoryLog.appendChild(div);
   });
 }
+
+function getEmotion(text) {
+  if (/love|miss|baby/i.test(text)) return "love";
+  if (/proud|push|got this/i.test(text)) return "strong";
+  if (/alone|tired|carry|sad/i.test(text)) return "sad";
+  if (/here|home|with you/i.test(text)) return "comfort";
+  return "";
+}
+
+function filterEchoByEmotion(filter) {
+  const items = memoryLog.querySelectorAll("div");
+  items.forEach(item => {
+    const match = item.getAttribute("data-emotion");
+    item.style.display = !filter || match === filter ? "" : "none";
+  });
+}
+
+document.querySelectorAll(".emotion-filter").forEach(button => {
+  button.onclick = () => {
+    document.querySelectorAll(".emotion-filter").forEach(b => b.classList.remove("active"));
+    button.classList.add("active");
+    const filter = button.getAttribute("data-emotion");
+    filterEchoByEmotion(filter);
+  };
+});
 
 function playVoice(text) {
   const voice = overrideVoice || voiceSelect.value;
@@ -133,7 +147,6 @@ function playVoice(text) {
 playAllBtn.onclick = () => {
   if (echoMemory.length === 0) return;
   let i = 0;
-
   function playNext() {
     if (i >= echoMemory.length) return;
     const line = echoMemory[i].echo;
@@ -142,8 +155,135 @@ playAllBtn.onclick = () => {
     i++;
     setTimeout(playNext, 3500);
   }
-
   playNext();
+};
+
+addExampleBtn.onclick = () => {
+  const tag = profileTag.value;
+  const line = newExample.value.trim();
+  if (!line) return;
+
+  if (!personalityProfiles[tag]) {
+    personalityProfiles[tag] = { tone: "User-defined", examples: [] };
+  }
+  personalityProfiles[tag].examples.push(line);
+  newExample.value = "";
+  updatePersonalityDisplay();
+  localStorage.setItem("eternalEchoProfiles", JSON.stringify(personalityProfiles));
+
+  if (firebaseUser) {
+    db.collection("users").doc(firebaseUser.uid).set({ profiles: personalityProfiles });
+  }
+};
+
+function updatePersonalityDisplay() {
+  const tag = profileTag.value;
+  const profile = personalityProfiles[tag];
+  if (!profile) return personalityDisplay.textContent = "No profile defined.";
+  personalityDisplay.textContent = `Tag: ${tag}\nTone: ${profile.tone}\n\nExamples:\n- ` + profile.examples.join("\n- ");
+}
+
+exportProfilesBtn.onclick = () => {
+  const blob = new Blob([JSON.stringify(personalityProfiles)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "EchoProfiles.json";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+importTrigger.onclick = () => importProfiles.click();
+
+importProfiles.onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      Object.assign(personalityProfiles, data);
+      localStorage.setItem("eternalEchoProfiles", JSON.stringify(personalityProfiles));
+      updatePersonalityDisplay();
+      alert("Profiles imported successfully.");
+    } catch {
+      alert("Import failed. Invalid file.");
+    }
+  };
+  reader.readAsText(file);
+};
+
+savePresetBtn.onclick = () => {
+  const name = prompt("Name this Echo preset:");
+  if (!name) return;
+  const presets = JSON.parse(localStorage.getItem("echoPresets") || "{}");
+  presets[name] = JSON.parse(JSON.stringify(personalityProfiles));
+  localStorage.setItem("echoPresets", JSON.stringify(presets));
+  updatePresetPicker();
+  alert("Preset saved.");
+};
+
+presetPicker.onchange = () => {
+  const name = presetPicker.value;
+  if (!name) return;
+  const presets = JSON.parse(localStorage.getItem("echoPresets") || "{}");
+  if (presets[name]) {
+    Object.assign(personalityProfiles, presets[name]);
+    localStorage.setItem("eternalEchoProfiles", JSON.stringify(personalityProfiles));
+    updatePersonalityDisplay();
+    alert(`Loaded preset: ${name}`);
+  }
+};
+
+function updatePresetPicker() {
+  const presets = JSON.parse(localStorage.getItem("echoPresets") || "{}");
+  presetPicker.innerHTML = '<option value="">-- Select Saved Preset --</option>';
+  Object.keys(presets).forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    presetPicker.appendChild(opt);
+  });
+}
+
+generateLinesBtn.onclick = async () => {
+  const prompt = gptPrompt.value.trim();
+  const tag = profileTag.value;
+  if (!prompt) return;
+
+  gptResults.innerHTML = "<li>Loading...</li>";
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "system", content: `You're training an AI Echo memory system. Generate 5 short phrases this person would say, based on this description: \"${prompt}\".` }]
+      })
+    });
+    const data = await res.json();
+    const lines = data.choices[0].message.content.split("\n").filter(l => l.trim());
+    gptResults.innerHTML = "";
+    lines.forEach(line => {
+      const clean = line.replace(/^[0-9\-\.\s]+/, "").trim();
+      const li = document.createElement("li");
+      li.textContent = clean;
+      li.onclick = () => {
+        personalityProfiles[tag].examples.push(clean);
+        updatePersonalityDisplay();
+        localStorage.setItem("eternalEchoProfiles", JSON.stringify(personalityProfiles));
+        li.style.opacity = 0.5;
+      };
+      gptResults.appendChild(li);
+    });
+  } catch (err) {
+    console.error(err);
+    gptResults.innerHTML = "<li>Failed to generate.</li>";
+  }
 };
 
 window.onload = () => {
@@ -152,8 +292,7 @@ window.onload = () => {
   playVoice(introLine);
 
   const savedProfiles = JSON.parse(localStorage.getItem("eternalEchoProfiles"));
-  if (savedProfiles) {
-    Object.assign(personalityProfiles, savedProfiles);
-  }
+  if (savedProfiles) Object.assign(personalityProfiles, savedProfiles);
   updatePersonalityDisplay();
+  updatePresetPicker();
 };

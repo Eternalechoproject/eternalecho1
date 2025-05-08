@@ -90,6 +90,26 @@
   <button id="importProfilesTrigger">Import JSON</button>
   <input type="file" id="importProfiles" style="display:none;" />
 
+  <h3>Saved Echo Sets</h3>
+  <select id="presetPicker">
+    <option value="">-- Select Saved Preset --</option>
+  </select>
+  <button id="savePresetBtn">Save New Preset</button>
+
+  <h3>Generate Examples with AI</h3>
+  <textarea id="gptPrompt" placeholder="Describe how this person talks..." rows="3"></textarea>
+  <button id="generateLinesBtn">Generate Sample Echo Lines</button>
+  <ul id="gptResults"></ul>
+
+  <h3>Filter by Emotion</h3>
+  <div>
+    <button class="emotion-filter" data-emotion="">All</button>
+    <button class="emotion-filter" data-emotion="love">❤️ Love</button>
+    <button class="emotion-filter" data-emotion="sad">😔 Sad</button>
+    <button class="emotion-filter" data-emotion="strong">💪 Strong</button>
+    <button class="emotion-filter" data-emotion="comfort">🫂 Comfort</button>
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
