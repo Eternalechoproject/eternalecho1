@@ -323,7 +323,29 @@ function isMorning() {
   const hour = now.getHours();
   return hour >= 5 && hour <= 11;
 }
-buildEchoTiles();
+function buildEchoTiles() {
+  echoTiles.innerHTML = "";
+  echoList.forEach(tag => {
+    const profile = personalityProfiles[tag];
+    const tile = document.createElement("button");
+    tile.textContent = `${memoryModes[tag].icon} ${tag.replace("#", "").toUpperCase()}`;
+    tile.style.padding = "10px";
+    tile.style.borderRadius = "10px";
+    tile.style.background = activeEcho === tag ? "#555" : "#222";
+    tile.style.color = "#fff";
+    tile.style.flex = "1 1 30%";
+    tile.style.border = "1px solid #444";
+    tile.onclick = () => {
+      activeEcho = tag;
+      profileTag.value = tag;
+      updatePersonalityDisplay();
+      buildEchoTiles();
+      filterEchoByTag(tag);
+    };
+    echoTiles.appendChild(tile);
+  });
+}
+
 
 function echoFutureLine() {
   const futureLines = personalityProfiles["#future"]?.examples || [];
@@ -356,6 +378,14 @@ function buildEchoTiles() {
       buildEchoTiles();
     };
     echoTiles.appendChild(tile);
+  });
+}
+function filterEchoByTag(tag) {
+  const items = memoryLog.querySelectorAll("div");
+  items.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    const matches = text.includes(tag.replace("#", ""));
+    item.style.display = matches ? "" : "none";
   });
 }
 
