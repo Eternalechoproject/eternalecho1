@@ -4,129 +4,72 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EternalEcho</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000" />
   <style>
     body {
-      font-family: sans-serif;
-      background: #f5f5f5;
       margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: #f2f2f2;
       padding: 20px;
     }
-    #chat {
-      border: 1px solid #ccc;
-      background: #fff;
-      padding: 10px;
-      height: 300px;
-      overflow-y: auto;
+    h1 {
+      font-size: 1.6rem;
       margin-bottom: 10px;
     }
-    .chat-bubble {
-      padding: 5px 10px;
-      margin: 4px 0;
+    #chat, #memory-log {
+      background: #1e1e1e;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    input, select, button {
+      font-size: 1rem;
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      border: none;
       border-radius: 6px;
-      max-width: 70%;
-    }
-    .chat-bubble.you {
-      background: #d0f0ff;
-    }
-    .chat-bubble.echo {
-      background: #e6e6e6;
-    }
-    .reaction::after {
-      content: attr(data-reaction);
-      margin-left: 6px;
     }
     button {
-      margin: 3px;
-      padding: 6px 12px;
+      background-color: #333;
+      color: #fff;
       cursor: pointer;
     }
-    textarea, input[type="text"] {
-      width: 100%;
-      padding: 6px;
-      margin: 5px 0;
-      box-sizing: border-box;
+    button:hover {
+      background-color: #444;
     }
-    #memory-log {
-      margin-top: 20px;
-      list-style-type: none;
-      padding: 0;
+    .echo-line {
+      animation: fadeIn 1s ease-in;
+      display: inline-block;
     }
-    .filter-btn.active {
-      background-color: #222;
-      color: white;
-    }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    @media (max-width: 600px) {
-      #chat {
-        height: 200px;
-      }
-      .controls {
-        flex-direction: column;
-      }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
-
   <h1>EternalEcho</h1>
-
   <div id="chat"></div>
 
-  <div class="input-row">
-    <input id="user-input" type="text" placeholder="Type a message..."/>
-    <button id="sendBtn">Send</button>
-    <button id="replayBtn">Replay</button>
-    <div id="playAllContainer"></div> <!-- 🔁 Echo Loop Butto will go here -->
-    <select id="voiceSelect">
-      <option value="21m00Tcm4TlvDq8ikWAM">Rachel</option>
-      <option value="EXAVITQu4vr4xnSDxMaL">Dad/Child</option>
-      <option value="TxGEqnHWrfWFTfGW9XjX">Mom/Partner/Future</option>
-      <option value="MF3mGyEYCl7XYWbV9V6O">Coach</option>
-      <option value="ErXwobaYiN019PkySvjV">Friend</option>
-    </select>
-  </div>
+  <input id="user-input" placeholder="Type a message..." />
+  <button id="sendBtn">Send</button>
+  <button id="replayBtn">Replay</button>
 
-  <div class="controls">
-    <input id="searchInput" type="text" placeholder="Search memories..." />
-    <button id="toggleSort">Sort: Newest First</button>
-  </div>
+  <select id="voiceSelect">
+    <option value="21m00Tcm4TlvDq8ikWAM">Rachel</option>
+    <option value="EXAVITQu4vr4xnSDxMaL">Dad/Child</option>
+    <option value="TxGEqnHWrfWFTfGW9XjX">Mom/Partner/Future</option>
+    <option value="MF3mGyEYCl7XYWbV9V6O">Coach</option>
+    <option value="ErXwobaYiN019PkySvjV">Friend</option>
+  </select>
 
-  <div id="cloudToggleContainer" style="margin-top: 10px;"></div> <!-- ☁️ Toggle Button will go here -->
+  <div id="memory-log"></div>
 
-  <button id="downloadBtn">Download .md</button>
-  <button id="exportJson">Export JSON</button>
-  <button id="importTrigger">Import JSON</button>
-  <input type="file" id="importJson" style="display:none;" />
-  <button id="clearBtn">Clear Memory</button>
-
-  <h3>Filter</h3>
-  <button class="filter-btn" data-tag="">All</button>
-  <button class="filter-btn" data-tag="dad">Dad</button>
-  <button class="filter-btn" data-tag="mom">Mom</button>
-  <button class="filter-btn" data-tag="partner">Partner</button>
-  <button class="filter-btn" data-tag="coach">Coach</button>
-  <button class="filter-btn" data-tag="friend">Friend</button>
-  <button class="filter-btn" data-tag="child">Child</button>
-  <button class="filter-btn" data-tag="future">Future</button>
-
-  <h3>Custom Entry</h3>
-  <input id="customReply" type="text" placeholder="Custom message"/>
-  <input id="customTag" type="text" placeholder="Tag (e.g., #dad)"/>
-  <button id="addCustom">Add Custom Echo</button>
-
-  <ul id="memory-log"></ul>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
-  <!-- EternalEcho Logic -->
   <script src="script.js"></script>
 </body>
 </html>
