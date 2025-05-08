@@ -380,6 +380,9 @@ window.onload = () => {
   const introLine = "Hi. I’m still here.";
   overrideVoice = ELEVENLABS_VOICE_ID;
   playVoice(introLine);
+if (localStorage.getItem("echoOnboarded") === "true") {
+  document.getElementById("onboarding").style.display = "none";
+}
 
   const savedProfiles = JSON.parse(localStorage.getItem("eternalEchoProfiles"));
   if (savedProfiles) Object.assign(personalityProfiles, savedProfiles);
@@ -398,3 +401,7 @@ window.onload = () => {
 
   enableSwipeGestures();
 };
+function dismissOnboarding() {
+  document.getElementById("onboarding").style.display = "none";
+  localStorage.setItem("echoOnboarded", "true");
+}
