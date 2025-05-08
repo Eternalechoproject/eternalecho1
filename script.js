@@ -26,6 +26,7 @@ const gptPrompt = document.getElementById("gptPrompt");
 const generateLinesBtn = document.getElementById("generateLinesBtn");
 const gptResults = document.getElementById("gptResults");
 
+const echoTiles = document.getElementById("echoTiles");
 let lastEcho = "";
 let echoMemory = [];
 let overrideVoice = null;
@@ -34,15 +35,27 @@ let activeEcho = "#dad";
 const personalityProfiles = {
   "#dad": {
     tone: "Encouraging, short, firm.",
-    examples: ["You know what to do.", "I'm proud of how far you’ve come.", "Keep your chin up. One more round."]
+    examples: [
+      "You know what to do.",
+      "I'm proud of how far you’ve come.",
+      "Keep your chin up. One more round."
+    ]
   },
   "#mom": {
     tone: "Warm, comforting, overprotective.",
-    examples: ["You don’t have to carry everything alone.", "You’ll always be my baby.", "I love you exactly as you are."]
+    examples: [
+      "You don’t have to carry everything alone.",
+      "You’ll always be my baby.",
+      "I love you exactly as you are."
+    ]
   },
   "#partner": {
     tone: "Soft, emotional, reassuring.",
-    examples: ["I miss your face.", "I know how hard that was. I'm here.", "You always feel like home."]
+    examples: [
+      "I miss your face.",
+      "I know how hard that was. I'm here.",
+      "You always feel like home."
+    ]
   },
   "#future": {
     tone: "Wise, calm, grounded. Encourages from experience.",
@@ -65,6 +78,8 @@ const memoryModes = {
   "#child": { icon: "🧒", voice: "EXAVITQu4vr4xnSDxMaL" },
   "#future": { icon: "🧬", voice: "TxGEqnHWrfWFTfGW9XjX" }
 };
+
+const echoList = ["#dad", "#mom", "#partner", "#future"];
 
 sendBtn.onclick = () => {
   const msg = input.value.trim();
@@ -114,7 +129,6 @@ function getEmotion(text) {
   if (/here|home|with you/i.test(text)) return "comfort";
   return "";
 }
-
 function filterEchoByEmotion(filter) {
   const items = memoryLog.querySelectorAll("div");
   items.forEach(item => {
@@ -132,8 +146,28 @@ document.querySelectorAll(".emotion-filter").forEach(button => {
   };
 });
 
+function filterEchoByTag(tag) {
+  const items = memoryLog.querySelectorAll("div");
+  items.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    const matches = text.includes(tag.replace("#", ""));
+    item.style.display = matches ? "" : "none";
+  });
+}
+
 function playVoice(text) {
   const voice = overrideVoice || voiceSelect.value;
+
+  const allTiles = document.querySelectorAll(".echo-tile");
+  allTiles.forEach(tile => tile.classList.remove("playing"));
+
+  const activeTile = Array.from(allTiles).find(tile =>
+    tile.textContent.toLowerCase().includes(activeEcho.replace("#", ""))
+  );
+  const wave = activeTile?.querySelector(".waveform");
+  if (wave) wave.style.display = "flex";
+  if (activeTile) activeTile.classList.add("playing");
+
   fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}/stream`, {
     method: "POST",
     headers: {
@@ -152,10 +186,80 @@ function playVoice(text) {
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audio.play();
+      audio.onended = () => {
+        if (wave) wave.style.display = "none";
+        if (activeTile) activeTile.classList.remove("playing");
+      };
     })
-    .catch(() => console.error("Voice playback failed"));
+    .catch(() => {
+      if (wave) wave.style.display = "none";
+      if (activeTile) activeTile.classList.remove("playing");
+      console.error("Voice playback failed");
+    });
 }
 
+function buildEchoTiles() {
+  echoTiles.innerHTML = "";
+  echoList.forEach(tag => {
+    const profile = personalityProfiles[tag];
+    const icon = memoryModes[tag].icon;
+    const topLine = profile?.examples?.[0] || "No examples yet.";
+    const label = tag.replace("#", "");
+    const imageFile = `${label}.jpg`;
+    const emotion = getEmotion(topLine);
+
+    const tile = document.createElement("div");
+    tile.className = "echo-tile";
+    if (activeEcho === tag) tile.classList.add("active");
+    tile.dataset.emotion = emotion;
+    tile.style.flex = "1 1 45%";
+    tile.style.padding = "12px";
+    tile.style.borderRadius = "12px";
+    tile.style.background = activeEcho === tag ? "#333" : "#1e1e1e";
+    tile.style.border = "1px solid #444";
+    tile.style.transition = "all 0.3s ease";
+    tile.style.cursor = "pointer";
+    tile.style.display = "flex";
+    tile.style.gap = "10px";
+    tile.style.alignItems = "center";
+
+    tile.innerHTML = `
+      <div style="position: relative;">
+        <img src="${imageFile}" style="width:50px;height:50px;border-radius:8px;border:1px solid #444;object-fit:cover;" />
+        <div class="waveform" style="position:absolute;bottom:-12px;left:0;right:0;display:none;">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 1.1rem;">${icon} ${label.toUpperCase()}</div>
+        <div style="opacity: 0.7; font-size: 0.85rem;">${profile?.tone || "No tone set"}</div>
+        <div style="margin-top: 4px; font-style: italic; font-size: 0.8rem; color: #aaa;">"${topLine}"</div>
+      </div>
+    `;
+
+    tile.onclick = () => {
+      activeEcho = tag;
+      profileTag.value = tag;
+      updatePersonalityDisplay();
+      buildEchoTiles();
+      filterEchoByTag(tag);
+    };
+
+    tile.onmouseover = () => {
+      tile.style.background = "#444";
+      if (profile?.examples?.length) {
+        overrideVoice = memoryModes[tag].voice;
+        playVoice(profile.examples[0]);
+      }
+    };
+
+    tile.onmouseleave = () => {
+      tile.style.background = activeEcho === tag ? "#333" : "#1e1e1e";
+    };
+
+    echoTiles.appendChild(tile);
+  });
+}
 playAllBtn.onclick = () => {
   if (echoMemory.length === 0) return;
   let i = 0;
@@ -307,6 +411,21 @@ generateLinesBtn.onclick = async () => {
   }
 };
 
+function isMorning() {
+  const now = new Date();
+  const hour = now.getHours();
+  return hour >= 5 && hour <= 11;
+}
+
+function echoFutureLine() {
+  const futureLines = personalityProfiles["#future"]?.examples || [];
+  const response = futureLines[Math.floor(Math.random() * futureLines.length)];
+  overrideVoice = memoryModes["#future"].voice;
+  playVoice(response);
+  echoMemory.push({ user: "(morning check-in)", echo: response });
+  renderMemoryLog();
+}
+
 window.onload = () => {
   const introLine = "Hi. I’m still here.";
   overrideVoice = ELEVENLABS_VOICE_ID;
@@ -317,75 +436,12 @@ window.onload = () => {
 
   updatePersonalityDisplay();
   updatePresetPicker();
+  buildEchoTiles();
+
+  const lastCheck = localStorage.getItem("futureEchoDate");
+  const today = new Date().toISOString().split("T")[0];
+  if (isMorning() && lastCheck !== today) {
+    echoFutureLine();
+    localStorage.setItem("futureEchoDate", today);
+  }
 };
-function isMorning() {
-  const now = new Date();
-  const hour = now.getHours();
-  return hour >= 5 && hour <= 11;
-}
-function buildEchoTiles() {
-  echoTiles.innerHTML = "";
-  echoList.forEach(tag => {
-    const profile = personalityProfiles[tag];
-    const tile = document.createElement("button");
-    tile.textContent = `${memoryModes[tag].icon} ${tag.replace("#", "").toUpperCase()}`;
-    tile.style.padding = "10px";
-    tile.style.borderRadius = "10px";
-    tile.style.background = activeEcho === tag ? "#555" : "#222";
-    tile.style.color = "#fff";
-    tile.style.flex = "1 1 30%";
-    tile.style.border = "1px solid #444";
-    tile.onclick = () => {
-      activeEcho = tag;
-      profileTag.value = tag;
-      updatePersonalityDisplay();
-      buildEchoTiles();
-      filterEchoByTag(tag);
-    };
-    echoTiles.appendChild(tile);
-  });
-}
-
-
-function echoFutureLine() {
-  const futureLines = personalityProfiles["#future"]?.examples || [];
-  const response = futureLines[Math.floor(Math.random() * futureLines.length)];
-  overrideVoice = memoryModes["#future"].voice;
-  playVoice(response);
-  echoMemory.push({ user: "(morning check-in)", echo: response });
-  renderMemoryLog();
-}
-const echoTiles = document.getElementById("echoTiles");
-
-const echoList = ["#dad", "#mom", "#partner", "#future"];
-
-function buildEchoTiles() {
-  echoTiles.innerHTML = "";
-  echoList.forEach(tag => {
-    const profile = personalityProfiles[tag];
-    const tile = document.createElement("button");
-    tile.textContent = `${memoryModes[tag].icon} ${tag.replace("#", "").toUpperCase()}`;
-    tile.style.padding = "10px";
-    tile.style.borderRadius = "10px";
-    tile.style.background = activeEcho === tag ? "#555" : "#222";
-    tile.style.color = "#fff";
-    tile.style.flex = "1 1 30%";
-    tile.style.border = "1px solid #444";
-    tile.onclick = () => {
-      activeEcho = tag;
-      profileTag.value = tag;
-      updatePersonalityDisplay();
-      buildEchoTiles();
-    };
-    echoTiles.appendChild(tile);
-  });
-}
-function filterEchoByTag(tag) {
-  const items = memoryLog.querySelectorAll("div");
-  items.forEach(item => {
-    const text = item.textContent.toLowerCase();
-    const matches = text.includes(tag.replace("#", ""));
-    item.style.display = matches ? "" : "none";
-  });
-}
-
