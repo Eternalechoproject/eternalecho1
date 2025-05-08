@@ -323,6 +323,7 @@ function isMorning() {
   const hour = now.getHours();
   return hour >= 5 && hour <= 11;
 }
+buildEchoTiles();
 
 function echoFutureLine() {
   const futureLines = personalityProfiles["#future"]?.examples || [];
@@ -331,5 +332,30 @@ function echoFutureLine() {
   playVoice(response);
   echoMemory.push({ user: "(morning check-in)", echo: response });
   renderMemoryLog();
+}
+const echoTiles = document.getElementById("echoTiles");
+
+const echoList = ["#dad", "#mom", "#partner", "#future"];
+
+function buildEchoTiles() {
+  echoTiles.innerHTML = "";
+  echoList.forEach(tag => {
+    const profile = personalityProfiles[tag];
+    const tile = document.createElement("button");
+    tile.textContent = `${memoryModes[tag].icon} ${tag.replace("#", "").toUpperCase()}`;
+    tile.style.padding = "10px";
+    tile.style.borderRadius = "10px";
+    tile.style.background = activeEcho === tag ? "#555" : "#222";
+    tile.style.color = "#fff";
+    tile.style.flex = "1 1 30%";
+    tile.style.border = "1px solid #444";
+    tile.onclick = () => {
+      activeEcho = tag;
+      profileTag.value = tag;
+      updatePersonalityDisplay();
+      buildEchoTiles();
+    };
+    echoTiles.appendChild(tile);
+  });
 }
 
