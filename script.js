@@ -1,9 +1,7 @@
-// Full EternalEcho script.js — Final Consolidated Version
-
 // === CONFIG ===
 const OPENAI_API_KEY = "sk_2cb8d573424713016fbf17e7a3405babd3c36d4c5d3e8b13";
 const ELEVENLABS_API_KEY = "sk_f1f2e850eb2fea7f8d3b3839513bb2fb5a3f54b5bb112bdc";
-const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Scarlett fallback
 
 const input = document.getElementById("user-input");
 const sendBtn = document.getElementById("sendBtn");
@@ -11,15 +9,19 @@ const replayBtn = document.getElementById("replayBtn");
 const memoryLog = document.getElementById("memory-log");
 const voiceSelect = document.getElementById("voiceSelect");
 const playAllBtn = document.getElementById("playAllBtn");
+
 const profileTag = document.getElementById("profileTag");
 const newExample = document.getElementById("newExample");
 const addExampleBtn = document.getElementById("addExampleBtn");
+const personalityDisplay = document.getElementById("personalityDisplay");
+
 const exportProfilesBtn = document.getElementById("exportProfilesBtn");
 const importProfiles = document.getElementById("importProfiles");
 const importTrigger = document.getElementById("importProfilesTrigger");
-const personalityDisplay = document.getElementById("personalityDisplay");
+
 const presetPicker = document.getElementById("presetPicker");
 const savePresetBtn = document.getElementById("savePresetBtn");
+
 const gptPrompt = document.getElementById("gptPrompt");
 const generateLinesBtn = document.getElementById("generateLinesBtn");
 const gptResults = document.getElementById("gptResults");
@@ -27,6 +29,7 @@ const gptResults = document.getElementById("gptResults");
 let lastEcho = "";
 let echoMemory = [];
 let overrideVoice = null;
+let activeEcho = "#dad";
 
 const personalityProfiles = {
   "#dad": {
@@ -40,6 +43,16 @@ const personalityProfiles = {
   "#partner": {
     tone: "Soft, emotional, reassuring.",
     examples: ["I miss your face.", "I know how hard that was. I'm here.", "You always feel like home."]
+  },
+  "#future": {
+    tone: "Wise, calm, grounded. Encourages from experience.",
+    examples: [
+      "You're further along than you think.",
+      "Keep going — I already know where this ends.",
+      "I'm proud of what you're doing now. Don't stop.",
+      "What you're building matters. Keep the long game in sight.",
+      "One day you'll look back and be glad you didn’t quit today."
+    ]
   }
 };
 
@@ -61,7 +74,6 @@ sendBtn.onclick = () => {
   overrideVoice = ELEVENLABS_VOICE_ID;
 
   const matched = Object.keys(memoryModes).find(tag => msg.toLowerCase().includes(tag));
-
   if (matched) {
     const mode = memoryModes[matched];
     overrideVoice = mode.voice;
@@ -160,6 +172,7 @@ playAllBtn.onclick = () => {
 
 addExampleBtn.onclick = () => {
   const tag = profileTag.value;
+  activeEcho = tag;
   const line = newExample.value.trim();
   if (!line) return;
 
@@ -170,16 +183,16 @@ addExampleBtn.onclick = () => {
   newExample.value = "";
   updatePersonalityDisplay();
   localStorage.setItem("eternalEchoProfiles", JSON.stringify(personalityProfiles));
-
-  if (firebaseUser) {
-    db.collection("users").doc(firebaseUser.uid).set({ profiles: personalityProfiles });
-  }
 };
 
 function updatePersonalityDisplay() {
   const tag = profileTag.value;
+  activeEcho = tag;
   const profile = personalityProfiles[tag];
-  if (!profile) return personalityDisplay.textContent = "No profile defined.";
+  if (!profile) {
+    personalityDisplay.textContent = "No profile defined.";
+    return;
+  }
   personalityDisplay.textContent = `Tag: ${tag}\nTone: ${profile.tone}\n\nExamples:\n- ` + profile.examples.join("\n- ");
 }
 
@@ -195,9 +208,10 @@ exportProfilesBtn.onclick = () => {
 
 importTrigger.onclick = () => importProfiles.click();
 
-importProfiles.onchange = e => {
+importProfiles.onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
+
   const reader = new FileReader();
   reader.onload = () => {
     try {
@@ -206,7 +220,7 @@ importProfiles.onchange = e => {
       localStorage.setItem("eternalEchoProfiles", JSON.stringify(personalityProfiles));
       updatePersonalityDisplay();
       alert("Profiles imported successfully.");
-    } catch {
+    } catch (err) {
       alert("Import failed. Invalid file.");
     }
   };
@@ -216,6 +230,7 @@ importProfiles.onchange = e => {
 savePresetBtn.onclick = () => {
   const name = prompt("Name this Echo preset:");
   if (!name) return;
+
   const presets = JSON.parse(localStorage.getItem("echoPresets") || "{}");
   presets[name] = JSON.parse(JSON.stringify(personalityProfiles));
   localStorage.setItem("echoPresets", JSON.stringify(presets));
@@ -226,6 +241,7 @@ savePresetBtn.onclick = () => {
 presetPicker.onchange = () => {
   const name = presetPicker.value;
   if (!name) return;
+
   const presets = JSON.parse(localStorage.getItem("echoPresets") || "{}");
   if (presets[name]) {
     Object.assign(personalityProfiles, presets[name]);
@@ -262,14 +278,19 @@ generateLinesBtn.onclick = async () => {
       },
       body: JSON.stringify({
         model: "gpt-4",
-        messages: [{ role: "system", content: `You're training an AI Echo memory system. Generate 5 short phrases this person would say, based on this description: \"${prompt}\".` }]
+        messages: [{
+          role: "system",
+          content: `You're training an AI Echo memory system. Generate 5 short phrases this person would say, based on this description: "${prompt}". Keep it emotionally realistic.`
+        }]
       })
     });
+
     const data = await res.json();
     const lines = data.choices[0].message.content.split("\n").filter(l => l.trim());
+
     gptResults.innerHTML = "";
     lines.forEach(line => {
-      const clean = line.replace(/^[0-9\-\.\s]+/, "").trim();
+      const clean = line.replace(/^[0-9\\-\\.\\s]+/, "").trim();
       const li = document.createElement("li");
       li.textContent = clean;
       li.onclick = () => {
@@ -293,6 +314,22 @@ window.onload = () => {
 
   const savedProfiles = JSON.parse(localStorage.getItem("eternalEchoProfiles"));
   if (savedProfiles) Object.assign(personalityProfiles, savedProfiles);
+
   updatePersonalityDisplay();
   updatePresetPicker();
 };
+function isMorning() {
+  const now = new Date();
+  const hour = now.getHours();
+  return hour >= 5 && hour <= 11;
+}
+
+function echoFutureLine() {
+  const futureLines = personalityProfiles["#future"]?.examples || [];
+  const response = futureLines[Math.floor(Math.random() * futureLines.length)];
+  overrideVoice = memoryModes["#future"].voice;
+  playVoice(response);
+  echoMemory.push({ user: "(morning check-in)", echo: response });
+  renderMemoryLog();
+}
+
