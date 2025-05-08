@@ -59,10 +59,13 @@ sendBtn.onclick = () => {
   overrideVoice = ELEVENLABS_VOICE_ID;
 
   const matched = Object.keys(memoryModes).find(tag => msg.toLowerCase().includes(tag));
+
   if (matched) {
     const mode = memoryModes[matched];
     overrideVoice = mode.voice;
     response = mode.lines[Math.floor(Math.random() * mode.lines.length)];
+  } else {
+    overrideVoice = voiceSelect.value || ELEVENLABS_VOICE_ID;
   }
 
   lastEcho = response;
