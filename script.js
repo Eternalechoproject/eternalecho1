@@ -1,7 +1,7 @@
 // === CONFIG ===
 const OPENAI_API_KEY = "sk_2cb8d573424713016fbf17e7a3405babd3c36d4c5d3e8b13";
 const ELEVENLABS_API_KEY = "sk_f1f2e850eb2fea7f8d3b3839513bb2fb5a3f54b5bb112bdc";
-const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Scarlett fallback
 
 const input = document.getElementById("user-input");
 const sendBtn = document.getElementById("sendBtn");
@@ -16,17 +16,17 @@ let overrideVoice = null;
 const memoryModes = {
   "#dad": {
     icon: "👤",
-    voice: "EXAVITQu4vr4xnSDxMaL",
+    voice: "iiidtqDt9FBdT1vfBluA",
     lines: ["I’m proud of you.", "Keep pushing."]
   },
   "#mom": {
     icon: "👩‍🦳",
-    voice: "TxGEqnHWrfWFTfGW9XjX",
+    voice: "gPe4h2IS1C7XHbnizzFa",
     lines: ["I love you exactly as you are.", "You’ll always be my baby."]
   },
   "#partner": {
     icon: "❤️",
-    voice: "TxGEqnHWrfWFTfGW9XjX",
+    voice: "WtA85syCrJwasGeHGH2p",
     lines: ["I miss your face.", "You always feel like home."]
   },
   "#coach": {
