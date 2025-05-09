@@ -4,52 +4,43 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EternalEcho</title>
-  <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#000" />
+  <link rel="manifest" href="manifest.json" />
   <style>
     body {
-      opacity: 0;
-      transition: opacity 0.7s ease-in-out;
       margin: 0;
-      font-family: sans-serif;
       background: #111;
-      color: #f2f2f2;
+      font-family: sans-serif;
+      color: #eee;
       padding: 20px;
     }
-    body.ready { opacity: 1; }
-
-    h1 { font-size: 1.6rem; margin-bottom: 10px; }
     #chat, #memory-log {
       background: #1e1e1e;
-      border-radius: 8px;
       padding: 10px;
+      border-radius: 10px;
       margin-bottom: 15px;
-      max-height: 200px;
+      max-height: 250px;
       overflow-y: auto;
     }
     input, select, button, textarea {
-      font-size: 1rem;
-      padding: 10px;
-      margin: 5px 0;
       width: 100%;
+      margin: 5px 0;
+      padding: 10px;
       border: none;
       border-radius: 6px;
-      box-sizing: border-box;
+      font-size: 1rem;
     }
-    button { background-color: #333; color: #fff; cursor: pointer; }
-    button:hover { background-color: #444; }
-    .echo-line { animation: fadeIn 1s ease-in; display: inline-block; }
+    button {
+      background: #333;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #444;
+    }
   </style>
 </head>
 <body>
-
-  <!-- Onboarding -->
-  <div id="onboarding" style="position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
-    <h1 style="font-size:2rem;color:#fff;margin-bottom:20px;">EternalEcho</h1>
-    <p style="font-size:1.2rem;color:#aaa;margin-bottom:30px;">The voices you love. Still with you.</p>
-    <p style="font-size:1rem;color:#666;margin-bottom:40px;">Tap a person to begin training your Echo.</p>
-    <button onclick="dismissOnboarding()" style="padding:12px 24px;font-size:1rem;border:none;border-radius:8px;background:#444;color:#fff;cursor:pointer;">Get Started</button>
-  </div>
 
   <h1>EternalEcho</h1>
 
@@ -62,98 +53,24 @@
   <select id="voiceSelect">
     <option value="21m00Tcm4TlvDq8ikWAM">Rachel</option>
     <option value="EXAVITQu4vr4xnSDxMaL">Dad/Child</option>
-    <option value="TxGEqnHWrfWFTfGW9XjX">Mom/Partner/Future</option>
+    <option value="TxGEqnHWrfWFTfGW9XjX">Mom/Partner</option>
     <option value="MF3mGyEYCl7XYWbV9V6O">Coach</option>
     <option value="ErXwobaYiN019PkySvjV">Friend</option>
   </select>
 
   <div id="memory-log"></div>
 
-  <h3>Echo Profiles</h3>
-  <div id="echoTiles" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;"></div>
-
-  <h3>Train Echo Personality</h3>
-  <select id="profileTag">
-    <option value="#dad">Dad</option>
-    <option value="#mom">Mom</option>
-    <option value="#partner">Partner</option>
-    <option value="#future">Future</option>
-  </select>
-  <textarea id="newExample" placeholder="Type a line they would say..." rows="3"></textarea>
-  <button id="addExampleBtn">Add to Profile</button>
-
-  <h3>Current Personality</h3>
-  <pre id="personalityDisplay" style="background:#222; padding:10px; border-radius:6px; max-height:200px; overflow:auto;"></pre>
-
-  <h3>Export / Import Profiles</h3>
-  <button id="exportProfilesBtn">Export JSON</button>
-  <button id="importProfilesTrigger">Import JSON</button>
-  <input type="file" id="importProfiles" style="display:none;" />
-
-  <h3>Saved Echo Sets</h3>
-  <select id="presetPicker">
-    <option value="">-- Select Saved Preset --</option>
-  </select>
-  <button id="savePresetBtn">Save New Preset</button>
-
-  <h3>Generate Examples with AI</h3>
-  <textarea id="gptPrompt" placeholder="Describe how this person talks..." rows="3"></textarea>
-  <button id="generateLinesBtn">Generate Sample Echo Lines</button>
-  <ul id="gptResults"></ul>
-
-  <h3>Filter by Emotion</h3>
-  <div>
-    <button class="emotion-filter" data-emotion="">All</button>
-    <button class="emotion-filter" data-emotion="love">❤️ Love</button>
-    <button class="emotion-filter" data-emotion="sad">😔 Sad</button>
-    <button class="emotion-filter" data-emotion="strong">💪 Strong</button>
-    <button class="emotion-filter" data-emotion="comfort">🫂 Comfort</button>
-  </div>
-
-  <h3>Upload Real Voice</h3>
+  <h3>Upload a Real Voice</h3>
   <input type="file" id="voiceUpload" accept="audio/*" />
 
-  <h3>Echo Memory Controls</h3>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;">
-    <button id="playAll">▶️ Play All</button>
-    <button id="btn-happy">😊</button>
-    <button id="btn-sad">😢</button>
-    <button id="btn-angry">😠</button>
-    <button id="btn-loving">❤️</button>
-  </div>
-
   <script>
-    function dismissOnboarding() {
-      document.getElementById("onboarding").style.display = "none";
-      localStorage.setItem("echoOnboarded", "true");
-    }
-
-    if (localStorage.getItem("echoOnboarded") === "true") {
-      document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("onboarding").style.display = "none";
-      });
-    }
-
-    document.getElementById("playAll").addEventListener("click", () => {
-      if (typeof playAllMemories === "function") playAllMemories();
-    });
-
-    ["happy", "sad", "angry", "loving"].forEach(emotion => {
-      const btn = document.getElementById(`btn-${emotion}`);
-      if (btn) {
-        btn.addEventListener("click", () => {
-          if (typeof filterByEmotion === "function") filterByEmotion(emotion);
-        });
-      }
-    });
-
     document.getElementById("voiceUpload").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file && typeof uploadVoiceClip === "function") uploadVoiceClip(file);
     });
   </script>
 
-  <!-- 🔌 Firebase + App Scripts -->
+  <!-- 🔌 Firebase + GPT + App -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
