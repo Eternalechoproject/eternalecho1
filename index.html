@@ -38,31 +38,27 @@
     }
     button { background-color: #333; color: #fff; cursor: pointer; }
     button:hover { background-color: #444; }
-
     .echo-line { animation: fadeIn 1s ease-in; display: inline-block; }
-    .echo-line.love {
-      background: linear-gradient(to right, #ffb6c1, #ff6496);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .echo-line.strong {
-      background: linear-gradient(to right, #ff6a6a, #ff3e3e);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .echo-line.sad {
-      background: linear-gradient(to right, #888, #aaa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .echo-line.comfort {
-      background: linear-gradient(to right, #8be8ff, #70f0ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+  </style>
+</head>
+<body>
 
-    .memory-entry[data-age="new"] { opacity: 1; }
-    .memory-entry[data-age="mid"]
+  <!-- Onboarding -->
+  <div id="onboarding" style="position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
+    <h1 style="font-size:2rem;color:#fff;margin-bottom:20px;">EternalEcho</h1>
+    <p style="font-size:1.2rem;color:#aaa;margin-bottom:30px;">The voices you love. Still with you.</p>
+    <p style="font-size:1rem;color:#666;margin-bottom:40px;">Tap a person to begin training your Echo.</p>
+    <button onclick="dismissOnboarding()" style="padding:12px 24px;font-size:1rem;border:none;border-radius:8px;background:#444;color:#fff;cursor:pointer;">Get Started</button>
+  </div>
+
+  <h1>EternalEcho</h1>
+
+  <div id="chat"></div>
+  <input id="user-input" placeholder="Type a message..." />
+  <button id="sendBtn">Send</button>
+  <button id="replayBtn">Replay</button>
+  <button id="playAllBtn">Play All Memories</button>
+
   <select id="voiceSelect">
     <option value="21m00Tcm4TlvDq8ikWAM">Rachel</option>
     <option value="EXAVITQu4vr4xnSDxMaL">Dad/Child</option>
@@ -108,13 +104,12 @@
   <h3>Filter by Emotion</h3>
   <div>
     <button class="emotion-filter" data-emotion="">All</button>
-    <button class="emotion-filter" data-emotion="love"❤️ Love</button>
+    <button class="emotion-filter" data-emotion="love">❤️ Love</button>
     <button class="emotion-filter" data-emotion="sad">😔 Sad</button>
     <button class="emotion-filter" data-emotion="strong">💪 Strong</button>
     <button class="emotion-filter" data-emotion="comfort">🫂 Comfort</button>
   </div>
 
-  <!-- ✅ New Voice Upload & Emotion Filters -->
   <h3>Upload Real Voice</h3>
   <input type="file" id="voiceUpload" accept="audio/*" />
 
@@ -126,6 +121,7 @@
     <button id="btn-angry">😠</button>
     <button id="btn-loving">❤️</button>
   </div>
+
   <script>
     function dismissOnboarding() {
       document.getElementById("onboarding").style.display = "none";
@@ -138,7 +134,6 @@
       });
     }
 
-    // 🔁 New Feature Bindings
     document.getElementById("playAll").addEventListener("click", () => {
       if (typeof playAllMemories === "function") playAllMemories();
     });
@@ -152,7 +147,7 @@
       }
     });
 
-      document.getElementById("voiceUpload").addEventListener("change", (e) => {
+    document.getElementById("voiceUpload").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file && typeof uploadVoiceClip === "function") uploadVoiceClip(file);
     });
@@ -165,4 +160,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
