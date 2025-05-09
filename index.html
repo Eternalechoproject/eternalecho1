@@ -9,18 +9,18 @@
   <style>
     body {
       background: #111;
-      color: #f2f2f2;
-      margin: 0;
+      color: #eee;
       font-family: sans-serif;
+      margin: 0;
       padding: 20px;
     }
     #chat, #memory-log {
       background: #1e1e1e;
       padding: 10px;
       border-radius: 10px;
-      margin-bottom: 15px;
       max-height: 250px;
       overflow-y: auto;
+      margin-bottom: 15px;
     }
     input, select, button, textarea {
       width: 100%;
@@ -42,6 +42,14 @@
 </head>
 <body>
 
+  <!-- Onboarding -->
+  <div id="onboarding" style="position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
+    <h1 style="font-size:2rem;color:#fff;margin-bottom:20px;">EternalEcho</h1>
+    <p style="font-size:1.2rem;color:#aaa;margin-bottom:30px;">The voices you love. Still with you.</p>
+    <p style="font-size:1rem;color:#666;margin-bottom:40px;">Tap a person to begin training your Echo.</p>
+    <button onclick="dismissOnboarding()" style="padding:12px 24px;font-size:1rem;border:none;border-radius:8px;background:#444;color:#fff;cursor:pointer;">Get Started</button>
+  </div>
+
   <h1>EternalEcho</h1>
 
   <div id="chat"></div>
@@ -60,17 +68,48 @@
 
   <div id="memory-log"></div>
 
-  <h3>Upload a Real Voice</h3>
+  <h3>Upload Real Voice</h3>
   <input type="file" id="voiceUpload" accept="audio/*" />
 
+  <h3>Echo Memory Filters</h3>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;">
+    <button id="btn-happy">😊</button>
+    <button id="btn-sad">😢</button>
+    <button id="btn-angry">😠</button>
+    <button id="btn-loving">❤️</button>
+  </div>
+
   <script>
+    function dismissOnboarding() {
+      document.getElementById("onboarding").style.display = "none";
+      localStorage.setItem("echoOnboarded", "true");
+    }
+    if (localStorage.getItem("echoOnboarded") === "true") {
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("onboarding").style.display = "none";
+      });
+    }
+
     document.getElementById("voiceUpload").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file && typeof uploadVoiceClip === "function") uploadVoiceClip(file);
     });
+
+    document.getElementById("playAllBtn").addEventListener("click", () => {
+      if (typeof playAllMemories === "function") playAllMemories();
+    });
+
+    ["happy", "sad", "angry", "loving"].forEach(emotion => {
+      const btn = document.getElementById(`btn-${emotion}`);
+      if (btn) {
+        btn.addEventListener("click", () => {
+          if (typeof filterByEmotion === "function") filterByEmotion(emotion);
+        });
+      }
+    });
   </script>
 
-  <!-- 🔌 Firebase + App Scripts -->
+  <!-- Firebase + GPT App -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
