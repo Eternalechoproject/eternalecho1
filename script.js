@@ -451,6 +451,16 @@ Format:
 }
 
 // === APP INIT ===
+function updatePersonalityDisplay() {
+  const tag = profileTag.value;
+  activeEcho = tag;
+  const profile = personalityProfiles[tag];
+  if (!profile) {
+    personalityDisplay.textContent = "No profile defined.";
+    return;
+  }
+  personalityDisplay.textContent = `Tag: ${tag}\nTone: ${profile.tone}\n\nExamples:\n- ` + profile.examples.join("\n- ");
+}
 
 window.onload = () => {
   overrideVoice = ELEVENLABS_VOICE_ID;
