@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EternalEcho</title>
-  <meta name="theme-color" content="#000" />
   <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000" />
   <style>
     body {
       background: #111;
@@ -14,6 +14,7 @@
       margin: 0;
       padding: 20px;
     }
+
     #chat, #memory-log {
       background: #1e1e1e;
       padding: 10px;
@@ -22,6 +23,7 @@
       overflow-y: auto;
       margin-bottom: 15px;
     }
+
     input, select, button, textarea {
       width: 100%;
       margin: 5px 0;
@@ -30,13 +32,67 @@
       border-radius: 6px;
       font-size: 1rem;
     }
+
     button {
       background: #333;
       color: #fff;
       cursor: pointer;
     }
+
     button:hover {
       background: #444;
+    }
+
+    .echo-tile {
+      background: #222;
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid #444;
+      transition: all 0.3s ease;
+    }
+
+    .waveform {
+      display: flex;
+      gap: 2px;
+      height: 8px;
+      margin-top: 6px;
+      align-items: flex-end;
+    }
+
+    .waveform span {
+      display: block;
+      width: 4px;
+      height: 100%;
+      background: cyan;
+      border-radius: 2px;
+      opacity: 0.6;
+      animation: wave 1s ease-in-out infinite;
+    }
+
+    .waveform span:nth-child(2) { animation-delay: 0.1s; }
+    .waveform span:nth-child(3) { animation-delay: 0.2s; }
+    .waveform span:nth-child(4) { animation-delay: 0.3s; }
+    .waveform span:nth-child(5) { animation-delay: 0.4s; }
+
+    @keyframes wave {
+      0%, 100% { height: 40%; }
+      50% { height: 100%; }
+    }
+
+    .streak-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ff6a00;
+      color: white;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: bold;
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
     }
   </style>
 </head>
@@ -68,22 +124,55 @@
 
   <div id="memory-log"></div>
 
-  <h3>Upload Real Voice</h3>
-  <input type="file" id="voiceUpload" accept="audio/*" />
+  <h3>Echo Profiles</h3>
+  <div id="echoTiles" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;"></div>
 
-  <h3>Echo Memory Filters</h3>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;">
+  <h3>Train Echo Personality</h3>
+  <select id="profileTag">
+    <option value="#dad">Dad</option>
+    <option value="#mom">Mom</option>
+    <option value="#partner">Partner</option>
+    <option value="#future">Future</option>
+  </select>
+  <textarea id="newExample" placeholder="Type a line they would say..." rows="3"></textarea>
+  <button id="addExampleBtn">Add to Profile</button>
+
+  <h3>Current Personality</h3>
+  <pre id="personalityDisplay" style="background:#222; padding:10px; border-radius:6px; max-height:200px; overflow:auto;"></pre>
+
+  <h3>Export / Import Profiles</h3>
+  <button id="exportProfilesBtn">Export JSON</button>
+  <button id="importProfilesTrigger">Import JSON</button>
+  <input type="file" id="importProfiles" style="display:none;" />
+
+  <h3>Saved Echo Sets</h3>
+  <select id="presetPicker">
+    <option value="">-- Select Saved Preset --</option>
+  </select>
+  <button id="savePresetBtn">Save New Preset</button>
+
+  <h3>Generate Examples with AI</h3>
+  <textarea id="gptPrompt" placeholder="Describe how this person talks..." rows="3"></textarea>
+  <button id="generateLinesBtn">Generate Sample Echo Lines</button>
+  <ul id="gptResults"></ul>
+
+  <h3>Filter by Emotion</h3>
+  <div style="margin-bottom: 10px;">
     <button id="btn-happy">😊</button>
     <button id="btn-sad">😢</button>
     <button id="btn-angry">😠</button>
     <button id="btn-loving">❤️</button>
   </div>
 
+  <h3>Upload Real Voice</h3>
+  <input type="file" id="voiceUpload" accept="audio/*" />
+
   <script>
     function dismissOnboarding() {
       document.getElementById("onboarding").style.display = "none";
       localStorage.setItem("echoOnboarded", "true");
     }
+
     if (localStorage.getItem("echoOnboarded") === "true") {
       document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("onboarding").style.display = "none";
@@ -109,7 +198,7 @@
     });
   </script>
 
-  <!-- Firebase + GPT App -->
+  <!-- Firebase + App Logic -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
