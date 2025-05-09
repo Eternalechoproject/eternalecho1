@@ -5,7 +5,7 @@ const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
 
 // === FIREBASE SETUP ===
 const firebaseConfig = {
-  apiKey: "AIzaSyC9YzEAOhU2uUB_O-axMLzyXhOlHbpp8t4",
+  apiKey: window.FIREBASE_API_KEY,
   authDomain: "echosoul-dev.firebaseapp.com",
   projectId: "echosoul-dev",
   storageBucket: "echosoul-dev.appspot.com",

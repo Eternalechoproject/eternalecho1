@@ -152,12 +152,21 @@
       }
     });
 
-    document.getElementById("voiceUpload").addEventListener("change", (e) => {
+        document.getElementById("voiceUpload").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file && typeof uploadVoiceClip === "function") uploadVoiceClip(file);
     });
   </script>
 
+  <!-- 🔐 Inject Firebase API Key from Vercel -->
+  <script>
+    window.FIREBASE_API_KEY = "{{FIREBASE_API_KEY}}";
+  </script>
+
   <!-- 🔌 Firebase + App Scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
