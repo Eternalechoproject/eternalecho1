@@ -4,47 +4,145 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EternalEcho</title>
-  <meta name="theme-color" content="#000" />
   <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000" />
   <style>
     body {
-      background: #111;
-      color: #f2f2f2;
+      opacity: 0;
+      transition: opacity 0.7s ease-in-out;
       margin: 0;
       font-family: sans-serif;
+      background: #111;
+      color: #f2f2f2;
       padding: 20px;
     }
+    body.ready { opacity: 1; }
+
+    h1 { font-size: 1.6rem; margin-bottom: 10px; }
     #chat, #memory-log {
       background: #1e1e1e;
+      border-radius: 8px;
       padding: 10px;
-      border-radius: 10px;
       margin-bottom: 15px;
-      max-height: 250px;
+      max-height: 200px;
       overflow-y: auto;
     }
     input, select, button, textarea {
-      width: 100%;
-      margin: 5px 0;
+      font-size: 1rem;
       padding: 10px;
+      margin: 5px 0;
+      width: 100%;
       border: none;
       border-radius: 6px;
-      font-size: 1rem;
+      box-sizing: border-box;
     }
-    button {
-      background: #333;
-      color: #fff;
-      cursor: pointer;
+    button { background-color: #333; color: #fff; cursor: pointer; }
+    button:hover { background-color: #444; }
+
+    .echo-line { animation: fadeIn 1s ease-in; display: inline-block; }
+    .echo-line.love {
+      background: linear-gradient(to right, #ffb6c1, #ff6496);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    button:hover {
-      background: #444;
+    .echo-line.strong {
+      background: linear-gradient(to right, #ff6a6a, #ff3e3e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
+    .echo-line.sad {
+      background: linear-gradient(to right, #888, #aaa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .echo-line.comfort {
+      background: linear-gradient(to right, #8be8ff, #70f0ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .memory-entry[data-age="new"] { opacity: 1; }
+    .memory-entry[data-age="mid"] { opacity: 0.6; }
+    .memory-entry[data-age="old"] { opacity: 0.3; }
+
+    .memory-entry[data-emotion="love"] { border-left: 4px solid #ff6496; }
+    .memory-entry[data-emotion="sad"] { border-left: 4px solid #aaa; }
+    .memory-entry[data-emotion="strong"] { border-left: 4px solid #ff5050; }
+    .memory-entry[data-emotion="comfort"] { border-left: 4px solid #70f0ff; }
+
+    .echo-tile.playing[data-emotion="love"] { box-shadow: 0 0 15px rgba(255, 100, 150, 0.5); }
+    .echo-tile.playing[data-emotion="strong"] { box-shadow: 0 0 15px rgba(255, 80, 80, 0.4); }
+    .echo-tile.playing[data-emotion="comfort"] { box-shadow: 0 0 15px rgba(100, 255, 255, 0.4); }
+    .echo-tile.playing[data-emotion="sad"] { box-shadow: 0 0 15px rgba(180, 180, 180, 0.2); }
+    .echo-tile.idle {
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.08);
+      animation: idlePulse 3s ease-in-out infinite;
+    }
+
+    .waveform {
+      display: flex;
+      gap: 2px;
+      margin-top: 6px;
+      height: 8px;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .waveform span {
+      display: block;
+      width: 4px;
+      height: 100%;
+      background: cyan;
+      border-radius: 2px;
+      opacity: 0.6;
+      animation: wave 1s ease-in-out infinite;
+    }
+    .waveform span:nth-child(2) { animation-delay: 0.1s; }
+    .waveform span:nth-child(3) { animation-delay: 0.2s; }
+    .waveform span:nth-child(4) { animation-delay: 0.3s; }
+    .waveform span:nth-child(5) { animation-delay: 0.4s; }
+    @keyframes wave {
+      0%, 100% { height: 40%; }
+      50% { height: 100%; }
+    }
+    @keyframes idlePulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(255,255,255,0.08); }
+      50% { box-shadow: 0 0 15px rgba(255,255,255,0.15); }
+    }
+
+    .streak-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ff6a00;
+      color: white;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: bold;
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    }
+
+    body[data-mood="love"] { background: #2a001a; color: #ffe5f0; }
+    body[data-mood="strong"] { background: #1a0000; color: #ffdddd; }
+    body[data-mood="comfort"] { background: #001f26; color: #dffaff; }
+    body[data-mood="sad"] { background: #0a0a0a; color: #bbb; }
   </style>
 </head>
 <body>
 
+  <!-- Onboarding -->
+  <div id="onboarding" style="position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
+    <h1 style="font-size:2rem;color:#fff;margin-bottom:20px;">EternalEcho</h1>
+    <p style="font-size:1.2rem;color:#aaa;margin-bottom:30px;">The voices you love. Still with you.</p>
+    <p style="font-size:1rem;color:#666;margin-bottom:40px;">Tap a person to begin training your Echo.</p>
+    <button onclick="dismissOnboarding()" style="padding:12px 24px;font-size:1rem;border:none;border-radius:8px;background:#444;color:#fff;cursor:pointer;">Get Started</button>
+  </div>
+
+  <!-- Core App UI -->
   <h1>EternalEcho</h1>
 
   <div id="chat"></div>
+
   <input id="user-input" placeholder="Type a message..." />
   <button id="sendBtn">Send</button>
   <button id="replayBtn">Replay</button>
@@ -53,24 +151,66 @@
   <select id="voiceSelect">
     <option value="21m00Tcm4TlvDq8ikWAM">Rachel</option>
     <option value="EXAVITQu4vr4xnSDxMaL">Dad/Child</option>
-    <option value="TxGEqnHWrfWFTfGW9XjX">Mom/Partner</option>
+    <option value="TxGEqnHWrfWFTfGW9XjX">Mom/Partner/Future</option>
     <option value="MF3mGyEYCl7XYWbV9V6O">Coach</option>
     <option value="ErXwobaYiN019PkySvjV">Friend</option>
   </select>
 
   <div id="memory-log"></div>
 
-  <h3>Upload a Real Voice</h3>
-  <input type="file" id="voiceUpload" accept="audio/*" />
+  <h3>Echo Profiles</h3>
+  <div id="echoTiles" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;"></div>
+
+  <h3>Train Echo Personality</h3>
+  <select id="profileTag">
+    <option value="#dad">Dad</option>
+    <option value="#mom">Mom</option>
+    <option value="#partner">Partner</option>
+    <option value="#future">Future</option>
+  </select>
+  <textarea id="newExample" placeholder="Type a line they would say..." rows="3"></textarea>
+  <button id="addExampleBtn">Add to Profile</button>
+
+  <h3>Current Personality</h3>
+  <pre id="personalityDisplay" style="background:#222; padding:10px; border-radius:6px; max-height:200px; overflow:auto;"></pre>
+
+  <h3>Export / Import Profiles</h3>
+  <button id="exportProfilesBtn">Export JSON</button>
+  <button id="importProfilesTrigger">Import JSON</button>
+  <input type="file" id="importProfiles" style="display:none;" />
+
+  <h3>Saved Echo Sets</h3>
+  <select id="presetPicker">
+    <option value="">-- Select Saved Preset --</option>
+  </select>
+  <button id="savePresetBtn">Save New Preset</button>
+
+  <h3>Generate Examples with AI</h3>
+  <textarea id="gptPrompt" placeholder="Describe how this person talks..." rows="3"></textarea>
+  <button id="generateLinesBtn">Generate Sample Echo Lines</button>
+  <ul id="gptResults"></ul>
+
+  <h3>Filter by Emotion</h3>
+  <div>
+    <button class="emotion-filter" data-emotion="">All</button>
+    <button class="emotion-filter" data-emotion="love">❤️ Love</button>
+    <button class="emotion-filter" data-emotion="sad">😔 Sad</button>
+    <button class="emotion-filter" data-emotion="strong">💪 Strong</button>
+    <button class="emotion-filter" data-emotion="comfort">🫂 Comfort</button>
+  </div>
 
   <script>
-    document.getElementById("voiceUpload").addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (file && typeof uploadVoiceClip === "function") uploadVoiceClip(file);
-    });
+    function dismissOnboarding() {
+      document.getElementById("onboarding").style.display = "none";
+      localStorage.setItem("echoOnboarded", "true");
+    }
+    if (localStorage.getItem("echoOnboarded") === "true") {
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("onboarding").style.display = "none";
+      });
+    }
   </script>
 
-  <!-- 🔌 Firebase + App Scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
