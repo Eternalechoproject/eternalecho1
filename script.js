@@ -1,5 +1,5 @@
 // === CONFIG ===
-const OPENAI_API_KEY = "sk_YOUR_OPENAI_KEY_HERE";
+const OPENAI_API_KEY = "sk_2cb8d573424713016fbf17e7a3405babd3c36d4c5d3e8b13";
 const ELEVENLABS_API_KEY = "sk_f1f2e850eb2fea7f8d3b3839513bb2fb5a3f54b5bb112bdc";
 const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
 
