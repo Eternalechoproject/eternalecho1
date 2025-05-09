@@ -461,6 +461,16 @@ function updatePersonalityDisplay() {
   }
   personalityDisplay.textContent = `Tag: ${tag}\nTone: ${profile.tone}\n\nExamples:\n- ` + profile.examples.join("\n- ");
 }
+function updatePresetPicker() {
+  const presets = JSON.parse(localStorage.getItem("echoPresets") || "{}");
+  presetPicker.innerHTML = '<option value="">-- Select Saved Preset --</option>';
+  Object.keys(presets).forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    presetPicker.appendChild(opt);
+  });
+}
 
 window.onload = () => {
   overrideVoice = ELEVENLABS_VOICE_ID;
