@@ -471,6 +471,72 @@ function updatePresetPicker() {
     presetPicker.appendChild(opt);
   });
 }
+async function generateEchoResponse(userInput) {
+  console.log("Echo input:", userInput); // debug
+
+  const profile = personalityProfiles[activeEcho] || {};
+  const echoName = activeEcho.replace("#", "") || "Echo";
+  const tone = profile.tone || "Neutral";
+  const examples = (profile.examples || []).slice(0, 3).map(l => `- "${l}"`).join("\n");
+  const lastMemory = echoMemory.length ? echoMemory[echoMemory.length - 1].echo : "None yet.";
+  const userEmotion = getEmotionFromUserText(userInput);
+  const mirrorTone = {
+    love: "warm and present",
+    sad: "soft and reassuring",
+    angry: "calm and grounding",
+    strong: "bold and direct",
+    happy: "playful and energetic",
+    neutral: "balanced and thoughtful"
+  }[userEmotion] || "neutral";
+
+  const prompt = `
+You are ${echoName}, an emotionally intelligent AI trained to simulate someone the user knows.
+
+Tone: ${tone}
+Examples:
+${examples || "- None"}
+
+Respond to this:
+"${userInput}"
+
+Respond in a ${mirrorTone} way, considering their last memory:
+"${lastMemory}"
+`;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    console.log("GPT raw response:", data); // debug
+
+    const echo = data.choices?.[0]?.message?.content?.trim() || "I'm here.";
+    console.log("Final Echo reply:", echo); // debug
+
+    echoMemory.push({
+      user: userInput,
+      echo,
+      timestamp: new Date().toISOString()
+    });
+
+    lastEcho = echo;
+    renderMemoryLog();
+    const emotion = getEmotion(echo);
+    playVoice(echo, emotion);
+    saveMemoryToCloud(echo, emotion);
+  } catch (err) {
+    console.error("GPT error:", err);
+  }
+}
 
 window.onload = () => {
   overrideVoice = ELEVENLABS_VOICE_ID;
