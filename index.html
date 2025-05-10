@@ -6,24 +6,39 @@
   <title>EternalEcho</title>
   <style>
     body {
-      background: #121212;
+      background: #111;
       color: #eee;
       font-family: sans-serif;
       margin: 0;
       padding: 20px;
     }
-    .echo-tile {
-      background: #222;
-      margin: 10px;
-      padding: 15px;
-      border-radius: 12px;
+    textarea, select, input, button {
+      font-size: 1rem;
+      margin-top: 8px;
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #333;
+      color: #fff;
+      border: none;
       cursor: pointer;
-      transition: background 0.3s;
+    }
+    button:hover {
+      background: #555;
+    }
+    .echo-tile {
+      background: #1a1a1a;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
     }
     .memory-entry {
-      margin-bottom: 12px;
       padding: 10px;
-      background: #1e1e1e;
+      background: #222;
+      margin-bottom: 10px;
       border-left: 4px solid #444;
     }
     .echo-line.love { color: pink; }
@@ -32,27 +47,14 @@
     .echo-line.comfort { color: lightgreen; }
     .echo-line.happy { color: yellow; }
     .echo-line.angry { color: red; }
-    #echoTiles {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    #onboarding {
-      background: #1e1e1e;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    #gptResults {
-      white-space: pre-wrap;
-      font-style: italic;
+    .waveform {
+      display: none;
       margin-top: 10px;
     }
     .waveform span {
       display: inline-block;
-      width: 3px;
-      height: 10px;
+      width: 4px;
+      height: 20px;
       margin-right: 2px;
       background: #888;
       animation: pulse 1s infinite ease-in-out;
@@ -61,62 +63,47 @@
       0%, 100% { transform: scaleY(1); }
       50% { transform: scaleY(1.8); }
     }
-    .streak-badge {
-      position: absolute;
-      top: 4px;
-      right: 10px;
-      font-size: 0.7rem;
-      color: orange;
-    }
   </style>
-<!-- Firebase App (the core Firebase SDK) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <div id="onboarding">
-    <h2>Welcome to EternalEcho</h2>
-    <p>Tap a person to begin training your Echo.</p>
-  </div>
+
+  <h1>EternalEcho</h1>
 
   <div id="echoTiles"></div>
 
-  <textarea id="user-input" rows="3" placeholder="Say something..." style="width:100%;"></textarea><br/>
+  <textarea id="user-input" placeholder="Type something to Echo..." rows="3"></textarea>
   <button id="sendBtn">Send</button>
-  <button id="replayBtn">Replay Last</button>
   <button id="playAllBtn">Play All</button>
+  <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
 
   <h3>Memory Log</h3>
   <div id="memory-log"></div>
 
-  <h3>Voice Upload</h3>
-  <input type="file" id="uploadVoiceInput" accept="audio/*" />
-  <button onclick="uploadVoiceClip(document.getElementById('uploadVoiceInput').files[0])">Upload Voice</button>
-
-  <h3>Profile</h3>
+  <h3>GPT Training (for profile examples)</h3>
   <select id="profileTag">
     <option value="#dad">Dad</option>
     <option value="#mom">Mom</option>
     <option value="#partner">Partner</option>
-    <option value="#future">Future</option>
+    <option value="#future">Future You</option>
   </select>
   <div id="personalityDisplay"></div>
+  <button id="generateLinesBtn">Generate GPT Phrases</button>
+  <div id="gptResults"></div>
 
-  <h3>Examples</h3>
-  <input id="newExample" placeholder="New example line"/>
-  <button id="addExampleBtn">Add Example</button>
+  <h3>Add Example Line</h3>
+  <input id="newExample" placeholder="Type a training line..." />
+  <button id="addExampleBtn">Add to Profile</button>
 
   <h3>Presets</h3>
   <select id="presetPicker"></select>
   <button id="savePresetBtn">Save Preset</button>
-  <button id="exportProfilesBtn">Export</button>
+  <button id="exportProfilesBtn">Export Profiles</button>
   <input id="importProfiles" type="file" style="display:none;" />
-  <button id="importProfilesTrigger">Import</button>
-
-  <h3>GPT Prompt (Debug)</h3>
-  <textarea id="gptPrompt" rows="3" style="width:100%;"></textarea>
-  <button id="generateLinesBtn">Generate GPT Lines</button>
-  <div id="gptResults"></div>
+  <button id="importProfilesTrigger">Import Profiles</button>
 
   <script src="script.js"></script>
 </body>
