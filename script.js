@@ -544,3 +544,10 @@ window.onload = () => {
     input.value = "";
   };
 };
+function setElevenKey() {
+  const key = document.getElementById("elevenKeyInput").value.trim();
+  if (key) {
+    localStorage.setItem("ELEVENLABS_KEY", key);
+    alert("Key saved. Refresh to activate.");
+  }
+}
