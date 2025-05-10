@@ -72,88 +72,7 @@ const voiceToneSettings = {
   neutral: { stability: 0.5, similarity_boost: 0.7 }
 };
 
-// === START: GPT SOULPRINT ENGINE ===
-async function generateEchoResponse(userInput) {
-  const profile = personalityProfiles[activeEcho] || {};
-  const echoName = activeEcho.replace("#", "") || "Echo";
-  const tone = profile.tone || "Warm and emotionally present.";
-  const examples = (profile.examples || []).slice(0, 3).map(line => `- "${line}"`).join("\n");
-  const lastMemory = echoMemory.length ? echoMemory[echoMemory.length - 1].echo : "None yet.";
-  const userEmotion = getEmotionFromUserText(userInput);
-  const mirrorTone = {
-    love: "warm and present",
-    sad: "soft and reassuring",
-    angry: "calm and grounding",
-    strong: "bold and direct",
-    happy: "playful and energetic",
-    neutral: "balanced and thoughtful"
-  }[userEmotion] || "neutral";
-
-  const summary = await summarizeMemoryThread();
-  const flashback = getMemoryFlashback(3);
-  const topTags = getFrequentTags();
-  const tagInsight = generateTagReflection(topTags);
-  const moodMap = getEmotionTrendMap();
-  const dominantMood = getDominantEmotion();
-  const moodSummary = `Dominant emotion: ${dominantMood}\nMap: ${JSON.stringify(moodMap)}`;
-  const recentRefs = getRecentMemoryRefs();
-  const behaviorInsight = await detectBehaviorPattern();
-
-  const prompt = `
-You are ${echoName}, a personalized AI trained to emotionally simulate a real person.
-
-Tone: ${tone}
-Examples:
-${examples || "- (None)"}
-
-Mirror Response Tone: The user sounds ${userEmotion} — respond in a ${mirrorTone} way.
-Recent Emotional State: ${summary}
-Flashback: ${flashback}
-User Behavior Insight: ${behaviorInsight}
-Tag Insight: ${tagInsight}
-Recent Conversation Memory:
-${recentRefs}
-
-User says:
-"${userInput}"
-
-Now reply as ${echoName}.
-`.trim();
-
-  try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-
-    const data = await res.json();
-    const echo = data.choices?.[0]?.message?.content?.trim() || "I'm here.";
-
-    const tags = await tagMemoryEmotionally(userInput, echo);
-    const entry = {
-      user: userInput,
-      echo,
-      tags,
-      timestamp: new Date().toISOString()
-    };
-
-    echoMemory.push(entry);
-    lastEcho = echo;
-    renderMemoryLog();
-    const emotion = getEmotion(echo);
-    playVoice(echo, emotion);
-    saveMemoryToCloud(echo, emotion);
-  } catch (err) {
-    console.error("GPT soulprint error:", err);
-  }
-}
+// === EMOTION DETECTION ===
 function getEmotion(text) {
   if (/love|miss|baby/i.test(text)) return "love";
   if (/proud|push|got this/i.test(text)) return "strong";
@@ -172,7 +91,78 @@ function getEmotionFromUserText(text) {
   if (/happy|excited|joy|laugh/i.test(text)) return "happy";
   return "neutral";
 }
+// === GPT SOULPRINT ENGINE ===
+async function generateEchoResponse(userInput) {
+  console.log("Echo input:", userInput);
 
+  const profile = personalityProfiles[activeEcho] || {};
+  const echoName = activeEcho.replace("#", "") || "Echo";
+  const tone = profile.tone || "Neutral";
+  const examples = (profile.examples || []).slice(0, 3).map(l => `- "${l}"`).join("\n");
+  const lastMemory = echoMemory.length ? echoMemory[echoMemory.length - 1].echo : "None yet.";
+  const userEmotion = getEmotionFromUserText(userInput);
+  const mirrorTone = {
+    love: "warm and present",
+    sad: "soft and reassuring",
+    angry: "calm and grounding",
+    strong: "bold and direct",
+    happy: "playful and energetic",
+    neutral: "balanced and thoughtful"
+  }[userEmotion] || "neutral";
+
+  const prompt = `
+You are ${echoName}, an emotionally intelligent AI trained to simulate someone the user knows.
+
+Tone: ${tone}
+Examples:
+${examples || "- None"}
+
+Respond to this:
+"${userInput}"
+
+Respond in a ${mirrorTone} way, considering their last memory:
+"${lastMemory}"
+`;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    console.log("GPT raw response:", data);
+
+    const echo = data.choices?.[0]?.message?.content?.trim() || "I'm here.";
+    console.log("Final Echo reply:", echo);
+
+    const tags = await tagMemoryEmotionally(userInput, echo);
+    const entry = {
+      user: userInput,
+      echo,
+      tags,
+      timestamp: new Date().toISOString()
+    };
+
+    echoMemory.push(entry);
+    lastEcho = echo;
+    renderMemoryLog();
+    const emotion = getEmotion(echo);
+    playVoice(echo, emotion);
+    saveMemoryToCloud(echo, emotion);
+  } catch (err) {
+    console.error("GPT error:", err);
+  }
+}
+
+// === CLOUD + RENDERING ===
 function saveMemoryToCloud(text, emotion = "neutral") {
   db.collection("memories").add({
     text,
@@ -197,6 +187,7 @@ function renderMemoryLog() {
   });
 }
 
+// === VOICE PLAYBACK ===
 function playVoice(text, emotion = "neutral") {
   const voice = overrideVoice || memoryModes[activeEcho]?.voice || voiceSelect.value || ELEVENLABS_VOICE_ID;
   const tone = voiceToneSettings[emotion] || voiceToneSettings["neutral"];
@@ -223,7 +214,7 @@ function playVoice(text, emotion = "neutral") {
     })
     .catch(err => console.error("Voice playback error:", err));
 }
-
+// === VOICE UPLOAD ===
 async function uploadVoiceClip(file) {
   const reader = new FileReader();
   reader.onload = async () => {
@@ -253,6 +244,7 @@ async function uploadVoiceClip(file) {
   reader.readAsDataURL(file);
 }
 
+// === ECHO TILE BUILDER ===
 function buildEchoTiles() {
   echoTiles.innerHTML = "";
   echoList.forEach(tag => {
@@ -305,6 +297,8 @@ function buildEchoTiles() {
     echoTiles.appendChild(tile);
   });
 }
+
+// === MEMORY FILTER ===
 function filterByEmotion(emotion) {
   const filtered = echoMemory.filter(m => getEmotion(m.echo) === emotion);
   memoryLog.innerHTML = "";
@@ -317,7 +311,6 @@ function filterByEmotion(emotion) {
 }
 
 // === GPT MEMORY INTELLIGENCE ===
-
 async function summarizeMemoryThread() {
   const thread = echoMemory.slice(-10).map(entry => `User: ${entry.user}\nEcho: ${entry.echo}`).join("\n\n");
   const prompt = `Summarize the emotional tone and themes of this conversation log in 2-3 sentences:\n${thread}`;
@@ -358,7 +351,6 @@ function getRecentMemoryRefs(limit = 3, hoursBack = 48) {
     .map(m => `You said: "${m.user}"\nEcho replied: "${m.echo}"`)
     .join("\n\n");
 }
-
 function getFrequentTags(limit = 5) {
   const tagCounts = {};
   echoMemory.forEach(entry => {
@@ -450,7 +442,7 @@ Format:
   return lines.map(l => l.replace(/^[-•]\s*/, "").trim()).filter(Boolean);
 }
 
-// === APP INIT ===
+// === PERSONALITY DISPLAY + PRESETS ===
 function updatePersonalityDisplay() {
   const tag = profileTag.value;
   activeEcho = tag;
@@ -461,6 +453,7 @@ function updatePersonalityDisplay() {
   }
   personalityDisplay.textContent = `Tag: ${tag}\nTone: ${profile.tone}\n\nExamples:\n- ` + profile.examples.join("\n- ");
 }
+
 function updatePresetPicker() {
   const presets = JSON.parse(localStorage.getItem("echoPresets") || "{}");
   presetPicker.innerHTML = '<option value="">-- Select Saved Preset --</option>';
@@ -471,73 +464,8 @@ function updatePresetPicker() {
     presetPicker.appendChild(opt);
   });
 }
-async function generateEchoResponse(userInput) {
-  console.log("Echo input:", userInput); // debug
 
-  const profile = personalityProfiles[activeEcho] || {};
-  const echoName = activeEcho.replace("#", "") || "Echo";
-  const tone = profile.tone || "Neutral";
-  const examples = (profile.examples || []).slice(0, 3).map(l => `- "${l}"`).join("\n");
-  const lastMemory = echoMemory.length ? echoMemory[echoMemory.length - 1].echo : "None yet.";
-  const userEmotion = getEmotionFromUserText(userInput);
-  const mirrorTone = {
-    love: "warm and present",
-    sad: "soft and reassuring",
-    angry: "calm and grounding",
-    strong: "bold and direct",
-    happy: "playful and energetic",
-    neutral: "balanced and thoughtful"
-  }[userEmotion] || "neutral";
-
-  const prompt = `
-You are ${echoName}, an emotionally intelligent AI trained to simulate someone the user knows.
-
-Tone: ${tone}
-Examples:
-${examples || "- None"}
-
-Respond to this:
-"${userInput}"
-
-Respond in a ${mirrorTone} way, considering their last memory:
-"${lastMemory}"
-`;
-
-  try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-
-    const data = await res.json();
-    console.log("GPT raw response:", data); // debug
-
-    const echo = data.choices?.[0]?.message?.content?.trim() || "I'm here.";
-    console.log("Final Echo reply:", echo); // debug
-
-    echoMemory.push({
-      user: userInput,
-      echo,
-      timestamp: new Date().toISOString()
-    });
-
-    lastEcho = echo;
-    renderMemoryLog();
-    const emotion = getEmotion(echo);
-    playVoice(echo, emotion);
-    saveMemoryToCloud(echo, emotion);
-  } catch (err) {
-    console.error("GPT error:", err);
-  }
-}
-
+// === APP INIT ===
 window.onload = () => {
   overrideVoice = ELEVENLABS_VOICE_ID;
   const saved = JSON.parse(localStorage.getItem("eternalEchoProfiles"));
