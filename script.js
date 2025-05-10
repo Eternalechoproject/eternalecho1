@@ -243,6 +243,7 @@ function buildEchoTiles() {
 
     tile.onclick = () => {
       activeEcho = tag;
+overrideVoice = memoryModes[tag].voice; // 🔥 key line
       profileTag.value = tag;
       updatePersonalityDisplay();
       buildEchoTiles();
