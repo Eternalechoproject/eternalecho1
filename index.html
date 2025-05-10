@@ -66,7 +66,6 @@
     .echo-line.comfort { color: lightgreen; }
     .echo-line.happy { color: yellow; }
     .echo-line.angry { color: red; }
-
     .waveform span {
       display: inline-block;
       width: 4px;
@@ -93,36 +92,42 @@
 
   <h1>EternalEcho</h1>
 
+  <!-- Echo Grid -->
   <div id="echoTiles"></div>
 
+  <!-- Main Chat Controls -->
   <textarea id="user-input" rows="3" placeholder="Speak your mind..."></textarea>
   <button id="sendBtn">Send to Echo</button>
   <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
   <button id="playAllBtn">Play All</button>
 
+  <!-- Memory Log -->
   <div id="memory-log"></div>
 
-  <!-- GPT Trainer -->
+  <!-- Profile Training / Preset Controls -->
   <select id="profileTag">
     <option value="#dad">Dad</option>
     <option value="#mom">Mom</option>
     <option value="#partner">Partner</option>
     <option value="#future">Future</option>
   </select>
+
+  <div id="personalityDisplay"></div>
+
+  <input id="newExample" placeholder="Add new example..." />
+  <button id="addExampleBtn">Add Example</button>
+
   <button id="generateLinesBtn">Generate GPT Phrases</button>
   <div id="gptResults"></div>
 
-  <!-- Presets -->
   <select id="presetPicker"></select>
   <button id="savePresetBtn">Save Preset</button>
   <button id="exportProfilesBtn">Export Profiles</button>
   <input id="importProfiles" type="file" />
   <button id="importProfilesTrigger">Import Profiles</button>
 
-  <!-- Personality Display -->
-  <div id="personalityDisplay"></div>
-  <input id="newExample" placeholder="Add example line..." />
-  <button id="addExampleBtn">Add Example</button>
+  <!-- Voice Select Fallback -->
+  <select id="voiceSelect" style="display:none"></select>
 
   <script src="script.js"></script>
 </body>
