@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EternalEcho</title>
   <style>
-<hr />
-<input id="elevenKeyInput" placeholder="Paste ElevenLabs Key..." />
-<button onclick="setElevenKey()">Save Voice Key</button>
-
     body {
       background: #0a0a0a;
       color: #eee;
@@ -96,19 +92,16 @@
 
   <h1>EternalEcho</h1>
 
-  <!-- Echo Grid -->
   <div id="echoTiles"></div>
 
-  <!-- Main Chat Controls -->
   <textarea id="user-input" rows="3" placeholder="Speak your mind..."></textarea>
   <button id="sendBtn">Send to Echo</button>
   <div class="waveform"><span></span><span></span><span></span><span></span><span></span></div>
   <button id="playAllBtn">Play All</button>
 
-  <!-- Memory Log -->
   <div id="memory-log"></div>
 
-  <!-- Profile Training / Preset Controls -->
+  <!-- Profile Training / Presets -->
   <select id="profileTag">
     <option value="#dad">Dad</option>
     <option value="#mom">Mom</option>
@@ -118,7 +111,7 @@
 
   <div id="personalityDisplay"></div>
 
-  <input id="newExample" placeholder="Add new example..." />
+  <input id="newExample" placeholder="Add example line..." />
   <button id="addExampleBtn">Add Example</button>
 
   <button id="generateLinesBtn">Generate GPT Phrases</button>
@@ -130,8 +123,20 @@
   <input id="importProfiles" type="file" />
   <button id="importProfilesTrigger">Import Profiles</button>
 
-  <!-- Voice Select Fallback -->
-  <select id="voiceSelect" style="display:none"></select>
+  <!-- ElevenLabs Key Input -->
+  <hr />
+  <input id="elevenKeyInput" placeholder="Paste ElevenLabs Key..." />
+  <button onclick="setElevenKey()">Save Voice Key</button>
+
+  <script>
+    function setElevenKey() {
+      const key = document.getElementById("elevenKeyInput").value.trim();
+      if (key) {
+        localStorage.setItem("ELEVENLABS_KEY", key);
+        alert("Key saved. Refresh to activate.");
+      }
+    }
+  </script>
 
   <script src="script.js"></script>
 </body>
