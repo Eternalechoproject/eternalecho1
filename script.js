@@ -1,5 +1,5 @@
 // === CONFIG ===
-const OPENAI_API_KEY = "sk_2cb8d573424713016fbf17e7a3405babd3c36d4c5d3e8b13";
+const OPENAI_API_KEY = "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";
 const ELEVENLABS_API_KEY = "sk_f1f2e850eb2fea7f8d3b3839513bb2fb5a3f54b5bb112bdc";
 const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
 
