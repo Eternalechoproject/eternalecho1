@@ -87,31 +87,40 @@ function getEmotionFromUserText(text) {
   return "neutral";
 }
 
-// === MAIN GPT HANDLER ===
+// === GPT SOULPRINT ENGINE ===
 async function generateEchoResponse(userInput) {
   const profile = personalityProfiles[activeEcho] || {};
   const echoName = activeEcho.replace("#", "") || "Echo";
   const tone = profile.tone || "Neutral";
-  const examples = (profile.examples || []).slice(0, 3).map(l => `- "${l}"`).join("\n");
-  const lastMemory = echoMemory.length ? echoMemory[echoMemory.length - 1].echo : "None yet.";
+  const examples = (profile.examples || []).slice(0, 3).map(l => `- ${l}`).join("\n");
+  const lastMemory = echoMemory.length ? echoMemory[echoMemory.length - 1].echo : "(no previous replies)";
   const userEmotion = getEmotionFromUserText(userInput);
-  const mirrorTone = {
-    love: "warm and present", sad: "soft and reassuring", angry: "calm and grounding",
-    strong: "bold and direct", happy: "playful and energetic", neutral: "balanced and thoughtful"
-  }[userEmotion] || "neutral";
+  const vibe = {
+    love: "warm and familiar",
+    sad: "calm and grounding",
+    angry: "centered and direct",
+    strong: "confident and bold",
+    happy: "light and playful",
+    comfort: "soft and reassuring",
+    neutral: "collected and balanced"
+  }[userEmotion] || "collected and thoughtful";
 
   const prompt = `
-You are ${echoName}, an emotionally intelligent AI trained to simulate someone the user knows.
+You are ${echoName}, a digital voice trained to reflect a real human presence.
 Tone: ${tone}
 Examples:
-${examples}
+${examples || "- (none)"}
 
-Respond to this:
+You are not a chatbot. You don’t explain things. You respond like a person who knows the user.
+Be brief, real, emotionally aware.
+
+Last thing Echo said: "${lastMemory}"
+
+Now Echo replies to:
 "${userInput}"
 
-Respond in a ${mirrorTone} way, considering their last memory:
-"${lastMemory}"
-`;
+Respond in a ${vibe} tone. Just speak.
+`.trim();
 
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -120,7 +129,10 @@ Respond in a ${mirrorTone} way, considering their last memory:
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ model: "gpt-4", messages: [{ role: "user", content: prompt }] })
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }]
+      })
     });
 
     const data = await res.json();
@@ -137,11 +149,11 @@ Respond in a ${mirrorTone} way, considering their last memory:
     console.error("GPT error:", err);
   }
 }
-
 // === VOICE PLAYBACK ===
 function playVoice(text, emotion = "neutral") {
   const voice = overrideVoice || memoryModes[activeEcho]?.voice || ELEVENLABS_VOICE_ID;
   const tone = voiceToneSettings[emotion] || voiceToneSettings["neutral"];
+
   fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}/stream`, {
     method: "POST",
     headers: {
@@ -149,7 +161,13 @@ function playVoice(text, emotion = "neutral") {
       "Content-Type": "application/json",
       "Accept": "audio/mpeg"
     },
-    body: JSON.stringify({ text, voice_settings: tone })
+    body: JSON.stringify({
+      text,
+      voice_settings: {
+        stability: tone.stability,
+        similarity_boost: tone.similarity_boost
+      }
+    })
   })
     .then(res => res.blob())
     .then(blob => {
@@ -158,6 +176,8 @@ function playVoice(text, emotion = "neutral") {
     })
     .catch(err => console.error("Voice playback error:", err));
 }
+
+// === MEMORY LOG ===
 function renderMemoryLog() {
   memoryLog.innerHTML = "";
   echoMemory.forEach(entry => {
@@ -165,11 +185,15 @@ function renderMemoryLog() {
     const div = document.createElement("div");
     div.className = "memory-entry";
     div.setAttribute("data-emotion", emotion);
-    div.innerHTML = `<strong>You:</strong> ${entry.user}<br><strong>Echo:</strong> <span class="echo-line ${emotion}">${entry.echo}</span>`;
+    div.innerHTML = `
+      <strong>You:</strong> ${entry.user}<br>
+      <strong>Echo:</strong> <span class="echo-line ${emotion}">${entry.echo}</span>
+    `;
     memoryLog.appendChild(div);
   });
 }
 
+// === FIRESTORE SAVE ===
 function saveMemoryToCloud(text, emotion = "neutral") {
   db.collection("memories").add({
     text,
@@ -179,6 +203,7 @@ function saveMemoryToCloud(text, emotion = "neutral") {
   }).catch(err => console.error("Firestore error:", err));
 }
 
+// === ECHO TILE BUILDER ===
 function buildEchoTiles() {
   echoTiles.innerHTML = "";
   Object.keys(personalityProfiles).forEach(tag => {
@@ -192,7 +217,9 @@ function buildEchoTiles() {
     const tile = document.createElement("div");
     tile.className = "echo-tile";
     tile.innerHTML = `
-      <div style="font-size: 1.1rem; font-weight: 600;">${icon} ${label} <span style="float:right;opacity:0.6;">${moodIcon}</span></div>
+      <div style="font-size: 1.1rem; font-weight: 600;">
+        ${icon} ${label} <span style="float:right;opacity:0.6;">${moodIcon}</span>
+      </div>
       <div style="opacity: 0.7; font-size: 0.9rem;">${profile.tone}</div>
       <div style="font-style: italic; font-size: 0.8rem; opacity: 0.6; margin-top: 5px;">"${topLine}"</div>
     `;
@@ -206,6 +233,7 @@ function buildEchoTiles() {
   });
 }
 
+// === PERSONALITY PROFILE DISPLAY ===
 function updatePersonalityDisplay() {
   const tag = profileTag.value;
   const profile = personalityProfiles[tag];
@@ -216,6 +244,7 @@ function updatePersonalityDisplay() {
   personalityDisplay.textContent = `Tag: ${tag}\nTone: ${profile.tone}\nExamples:\n- ` + profile.examples.join("\n- ");
 }
 
+// === DAILY CHECK-IN ===
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
@@ -237,7 +266,6 @@ if (daily) {
   div.innerHTML = `<strong>📅 Daily Check-In:</strong><br><em>${daily.echo}</em>`;
   memoryLog.prepend(div);
 }
-
 // === EMOTION FILTERS ===
 const emotions = ["love", "sad", "strong", "comfort", "happy", "angry"];
 const filterBar = document.createElement("div");
@@ -305,7 +333,7 @@ generateLinesBtn.onclick = async () => {
   gptResults.textContent = output || "No response";
 };
 
-// === WAVEFORM ANIMATION ===
+// === WAVEFORM TRIGGER ===
 function showWaveformDuringPlayback() {
   const waveform = document.querySelector(".waveform");
   if (!waveform) return;
@@ -372,7 +400,7 @@ importProfiles.onchange = (e) => {
   reader.readAsText(file);
 };
 
-// === ONLOAD ===
+// === INIT ===
 window.onload = () => {
   overrideVoice = ELEVENLABS_VOICE_ID;
   updatePresetPicker();
@@ -386,4 +414,3 @@ window.onload = () => {
     input.value = "";
   };
 };
-
