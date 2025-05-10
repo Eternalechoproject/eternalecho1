@@ -9,30 +9,13 @@
       background: #0a0a0a;
       color: #eee;
       font-family: 'Helvetica Neue', sans-serif;
-      padding: 20px;
       margin: 0;
+      padding: 20px;
     }
     h1 {
-      font-size: 2rem;
       text-align: center;
-      margin-bottom: 16px;
-    }
-    textarea, select, input, button {
-      font-size: 1rem;
-      padding: 10px;
-      margin-top: 10px;
-      border: none;
-      border-radius: 6px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    button {
-      background: #333;
-      color: #fff;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #444;
+      font-size: 2rem;
+      margin-bottom: 20px;
     }
     #echoTiles {
       display: grid;
@@ -45,10 +28,23 @@
       padding: 14px;
       border-radius: 12px;
       cursor: pointer;
-      transition: background 0.2s ease;
     }
-    .echo-tile:hover {
-      background: #2a2a2a;
+    textarea, select, input, button {
+      font-size: 1rem;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 6px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #333;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #444;
     }
     #memory-log {
       max-height: 300px;
@@ -71,10 +67,6 @@
     .echo-line.happy { color: yellow; }
     .echo-line.angry { color: red; }
 
-    .waveform {
-      display: none;
-      margin-top: 10px;
-    }
     .waveform span {
       display: inline-block;
       width: 4px;
@@ -82,6 +74,10 @@
       margin-right: 2px;
       background: #888;
       animation: pulse 1s infinite ease-in-out;
+    }
+    .waveform {
+      display: none;
+      margin-top: 10px;
     }
     @keyframes pulse {
       0%, 100% { transform: scaleY(1); }
@@ -106,26 +102,27 @@
 
   <div id="memory-log"></div>
 
-  <!-- Hidden Preset / Training Elements -->
-  <select id="profileTag" style="display:none">
+  <!-- GPT Trainer -->
+  <select id="profileTag">
     <option value="#dad">Dad</option>
     <option value="#mom">Mom</option>
     <option value="#partner">Partner</option>
     <option value="#future">Future</option>
   </select>
-  <div id="personalityDisplay" style="display:none"></div>
-  <input id="newExample" style="display:none">
-  <button id="addExampleBtn" style="display:none"></button>
-  <button id="replayBtn" style="display:none"></button>
-  <input id="importProfiles" type="file" style="display:none;" />
-  <select id="presetPicker" style="display:none"></select>
-  <button id="savePresetBtn" style="display:none"></button>
-  <button id="exportProfilesBtn" style="display:none"></button>
-  <button id="importProfilesTrigger" style="display:none"></button>
-  <textarea id="gptPrompt" style="display:none"></textarea>
-  <button id="generateLinesBtn" style="display:none"></button>
-  <div id="gptResults" style="display:none"></div>
-  <select id="voiceSelect" style="display:none"></select>
+  <button id="generateLinesBtn">Generate GPT Phrases</button>
+  <div id="gptResults"></div>
+
+  <!-- Presets -->
+  <select id="presetPicker"></select>
+  <button id="savePresetBtn">Save Preset</button>
+  <button id="exportProfilesBtn">Export Profiles</button>
+  <input id="importProfiles" type="file" />
+  <button id="importProfilesTrigger">Import Profiles</button>
+
+  <!-- Personality Display -->
+  <div id="personalityDisplay"></div>
+  <input id="newExample" placeholder="Add example line..." />
+  <button id="addExampleBtn">Add Example</button>
 
   <script src="script.js"></script>
 </body>

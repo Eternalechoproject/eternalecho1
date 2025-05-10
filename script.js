@@ -1,7 +1,7 @@
 // === CONFIG ===
 const OPENAI_API_KEY = localStorage.getItem("OPENAI_KEY");
-const ELEVENLABS_API_KEY = "sk_f1f2e850eb2fea7f8d3b3839513bb2fb5a3f54b5bb112bdc";
-const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+const ELEVENLABS_API_KEY = localStorage.getItem("ELEVENLABS_KEY");
+const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Scarlett fallback
 
 const firebaseConfig = {
   apiKey: "AIzaSyDIKOTcAGGyhJrnvmTLefF1IUIcbcnr08k",
@@ -11,38 +11,25 @@ const firebaseConfig = {
   messagingSenderId: "119494681220",
   appId: "1:119494681220:web:febf94a895c933b56b18d1"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // === DOM ELEMENTS ===
 const input = document.getElementById("user-input");
 const sendBtn = document.getElementById("sendBtn");
-const replayBtn = document.getElementById("replayBtn");
 const memoryLog = document.getElementById("memory-log");
-const voiceSelect = document.getElementById("voiceSelect");
 const playAllBtn = document.getElementById("playAllBtn");
-const gptPrompt = document.getElementById("gptPrompt");
-const generateLinesBtn = document.getElementById("generateLinesBtn");
-const gptResults = document.getElementById("gptResults");
 const echoTiles = document.getElementById("echoTiles");
 const profileTag = document.getElementById("profileTag");
-const newExample = document.getElementById("newExample");
-const addExampleBtn = document.getElementById("addExampleBtn");
 const personalityDisplay = document.getElementById("personalityDisplay");
-const exportProfilesBtn = document.getElementById("exportProfilesBtn");
-const importProfiles = document.getElementById("importProfiles");
-const importTrigger = document.getElementById("importProfilesTrigger");
-const presetPicker = document.getElementById("presetPicker");
-const savePresetBtn = document.getElementById("savePresetBtn");
 
 // === STATE ===
 let echoMemory = [];
 let lastEcho = "";
 let overrideVoice = null;
 let activeEcho = "#dad";
-let echoStreaks = JSON.parse(localStorage.getItem("echoStreaks") || "{}");
 
+// === PROFILES ===
 const personalityProfiles = {
   "#dad":     { tone: "Direct, motivational", examples: ["You’ve got this.", "Keep your head up."] },
   "#mom":     { tone: "Loving, supportive", examples: ["I’m proud of you.", "Take care of yourself."] },
@@ -67,7 +54,7 @@ const voiceToneSettings = {
   neutral: { stability: 0.5, similarity_boost: 0.7 }
 };
 
-// === EMOTION LOGIC ===
+// === EMOTION DETECTION ===
 function getEmotion(text) {
   if (/love|miss|baby/i.test(text)) return "love";
   if (/proud|push|got this/i.test(text)) return "strong";
@@ -86,7 +73,6 @@ function getEmotionFromUserText(text) {
   if (/happy|excited|joy|laugh/i.test(text)) return "happy";
   return "neutral";
 }
-
 // === GPT SOULPRINT ENGINE ===
 async function generateEchoResponse(userInput) {
   const profile = personalityProfiles[activeEcho] || {};
@@ -102,8 +88,8 @@ async function generateEchoResponse(userInput) {
     strong: "confident and bold",
     happy: "light and playful",
     comfort: "soft and reassuring",
-    neutral: "collected and balanced"
-  }[userEmotion] || "collected and thoughtful";
+    neutral: "collected and thoughtful"
+  }[userEmotion] || "neutral";
 
   const prompt = `
 You are ${echoName}, a digital voice trained to reflect a real human presence.
@@ -111,13 +97,11 @@ Tone: ${tone}
 Examples:
 ${examples || "- (none)"}
 
-You are not a chatbot. You don’t explain things. You respond like a person who knows the user.
-Be brief, real, emotionally aware.
+You are not a chatbot. You don’t explain things. You respond like someone the user knows.
+Be real, emotionally aware.
 
 Last thing Echo said: "${lastMemory}"
-
-Now Echo replies to:
-"${userInput}"
+User says: "${userInput}"
 
 Respond in a ${vibe} tone. Just speak.
 `.trim();
@@ -140,15 +124,14 @@ Respond in a ${vibe} tone. Just speak.
     const emotion = getEmotion(echo);
 
     echoMemory.push({ user: userInput, echo, timestamp: new Date().toISOString() });
-    lastEcho = echo;
     renderMemoryLog();
     playVoice(echo, emotion);
     saveMemoryToCloud(echo, emotion);
-    storeDailyCheckIn({ user: userInput, echo });
   } catch (err) {
     console.error("GPT error:", err);
   }
 }
+
 // === VOICE PLAYBACK ===
 function playVoice(text, emotion = "neutral") {
   const voice = overrideVoice || memoryModes[activeEcho]?.voice || ELEVENLABS_VOICE_ID;
@@ -202,8 +185,7 @@ function saveMemoryToCloud(text, emotion = "neutral") {
     timestamp: new Date().toISOString()
   }).catch(err => console.error("Firestore error:", err));
 }
-
-// === ECHO TILE BUILDER ===
+// === BUILD ECHO TILES ===
 function buildEchoTiles() {
   echoTiles.innerHTML = "";
   Object.keys(personalityProfiles).forEach(tag => {
@@ -226,127 +208,84 @@ function buildEchoTiles() {
     tile.onclick = () => {
       activeEcho = tag;
       profileTag.value = tag;
-      updatePersonalityDisplay();
+      speakOpeningLine();
       buildEchoTiles();
     };
     echoTiles.appendChild(tile);
   });
 }
 
-// === PERSONALITY PROFILE DISPLAY ===
-function updatePersonalityDisplay() {
-  const tag = profileTag.value;
-  const profile = personalityProfiles[tag];
-  if (!profile) {
-    personalityDisplay.textContent = "No profile found.";
-    return;
-  }
-  personalityDisplay.textContent = `Tag: ${tag}\nTone: ${profile.tone}\nExamples:\n- ` + profile.examples.join("\n- ");
-}
-
-// === DAILY CHECK-IN ===
-function getTodayKey() {
-  return new Date().toISOString().split("T")[0];
-}
-
-function storeDailyCheckIn(entry) {
-  localStorage.setItem("dailyEcho_" + getTodayKey(), JSON.stringify(entry));
-}
-
-function loadDailyCheckIn() {
-  const data = localStorage.getItem("dailyEcho_" + getTodayKey());
-  if (!data) return null;
-  try { return JSON.parse(data); } catch { return null; }
-}
-
-const daily = loadDailyCheckIn();
-if (daily) {
-  const div = document.createElement("div");
-  div.className = "memory-entry";
-  div.innerHTML = `<strong>📅 Daily Check-In:</strong><br><em>${daily.echo}</em>`;
-  memoryLog.prepend(div);
-}
-// === EMOTION FILTERS ===
-const emotions = ["love", "sad", "strong", "comfort", "happy", "angry"];
-const filterBar = document.createElement("div");
-filterBar.style.display = "flex";
-filterBar.style.gap = "8px";
-filterBar.style.margin = "10px 0";
-emotions.forEach(emotion => {
-  const btn = document.createElement("button");
-  btn.textContent = emotion;
-  btn.onclick = () => {
-    memoryLog.innerHTML = "";
-    echoMemory.filter(m => getEmotion(m.echo) === emotion).forEach(entry => {
-      const div = document.createElement("div");
-      div.className = "memory-entry";
-      div.innerHTML = `<strong>You:</strong> ${entry.user}<br><strong>Echo:</strong> <span class="echo-line ${emotion}">${entry.echo}</span>`;
-      memoryLog.appendChild(div);
-    });
-  };
-  filterBar.appendChild(btn);
-});
-memoryLog.before(filterBar);
-
-// === PLAY ALL LOOP ===
-playAllBtn.onclick = () => {
-  let index = 0;
-  function playNext() {
-    if (index >= echoMemory.length) return;
-    const entry = echoMemory[index];
-    playVoice(entry.echo, getEmotion(entry.echo));
-    index++;
-    setTimeout(playNext, 4000);
-  }
-  playNext();
+// === FIRST-RUN INTRO LINES ===
+const introLines = {
+  "#dad": "I’ve been waiting. You good?",
+  "#mom": "There you are. You’ve been on my mind.",
+  "#partner": "You made it back to me.",
+  "#future": "You're right on time. Let's stay in it."
 };
 
-// === TAG EDITOR ===
-memoryLog.addEventListener("click", e => {
-  const div = e.target.closest(".memory-entry");
-  if (!div) return;
-  const idx = Array.from(memoryLog.children).indexOf(div);
-  const tags = prompt("Edit tags (comma-separated):", (echoMemory[idx].tags || []).join(", "));
-  if (tags !== null) {
-    echoMemory[idx].tags = tags.split(",").map(t => t.trim()).filter(Boolean);
-    localStorage.setItem("echoMemory", JSON.stringify(echoMemory));
-  }
-});
+function speakOpeningLine() {
+  const line = introLines[activeEcho] || "I'm here.";
+  playVoice(line, "comfort");
+}
 
-// === GPT TRAINING LINES ===
-generateLinesBtn.onclick = async () => {
-  const tag = profileTag.value;
-  const profile = personalityProfiles[tag];
-  const prompt = `Generate 3 short training phrases for an AI personality with the tone: ${profile.tone}`;
+// === IDLE AMBIENT VOICE ===
+const idleQuotes = [
+  "I'm still here.",
+  "You don’t have to say anything.",
+  "Even in silence, I hear you.",
+  "Some things don’t need words."
+];
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ model: "gpt-4", messages: [{ role: "user", content: prompt }] })
+let idleTimer;
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    const quote = idleQuotes[Math.floor(Math.random() * idleQuotes.length)];
+    playVoice(quote, "comfort");
+  }, 60000); // 1 minute
+}
+document.body.addEventListener("mousemove", resetIdleTimer);
+document.body.addEventListener("keydown", resetIdleTimer);
+resetIdleTimer();
+
+// === AMBIENT BACKGROUND LOOP ===
+const ambientAudio = new Audio("https://cdn.jsdelivr.net/gh/pingdotai/assets@main/audio/echo-ambient-soft.mp3");
+ambientAudio.loop = true;
+ambientAudio.volume = 0.15;
+
+function startAmbient() {
+  ambientAudio.play().catch(() => {
+    document.body.addEventListener("click", () => ambientAudio.play(), { once: true });
   });
-
-  const data = await res.json();
-  const output = data.choices?.[0]?.message?.content?.trim();
-  gptResults.textContent = output || "No response";
-};
-
-// === WAVEFORM TRIGGER ===
-function showWaveformDuringPlayback() {
-  const waveform = document.querySelector(".waveform");
-  if (!waveform) return;
-  waveform.style.display = "block";
-  setTimeout(() => waveform.style.display = "none", 4000);
 }
-const originalPlayVoice = playVoice;
-playVoice = function(text, emotion) {
-  showWaveformDuringPlayback();
-  originalPlayVoice(text, emotion);
-};
+// === INIT ===
+window.onload = () => {
+  overrideVoice = ELEVENLABS_VOICE_ID;
+  buildEchoTiles();
+  resetIdleTimer();
+  startAmbient();
+  speakOpeningLine();
 
-// === PRESET SAVE/LOAD ===
+  sendBtn.onclick = () => {
+    const msg = input.value.trim();
+    if (!msg) return;
+    generateEchoResponse(msg);
+    input.value = "";
+  };
+
+  // === ECHO ME BUTTON ===
+  const whisperBtn = document.createElement("button");
+  whisperBtn.textContent = "Echo Me";
+  whisperBtn.style.marginTop = "10px";
+  whisperBtn.onclick = () => {
+    const quote = idleQuotes[Math.floor(Math.random() * idleQuotes.length)];
+    playVoice(quote, "comfort");
+  };
+  document.body.appendChild(whisperBtn);
+};
+// === DEV POWER STACK ===
+
+// === PRESETS ===
 function updatePresetPicker() {
   const presets = JSON.parse(localStorage.getItem("echoPresets") || "{}");
   presetPicker.innerHTML = '<option value="">-- Select Saved Preset --</option>';
@@ -400,17 +339,54 @@ importProfiles.onchange = (e) => {
   reader.readAsText(file);
 };
 
-// === INIT ===
-window.onload = () => {
-  overrideVoice = ELEVENLABS_VOICE_ID;
-  updatePresetPicker();
-  updatePersonalityDisplay();
-  buildEchoTiles();
-
-  sendBtn.onclick = () => {
-    const msg = input.value.trim();
-    if (!msg) return;
-    generateEchoResponse(msg);
-    input.value = "";
-  };
+// === GPT TRAINING LINES ===
+generateLinesBtn.onclick = async () => {
+  const tag = profileTag.value;
+  const profile = personalityProfiles[tag];
+  const prompt = `Generate 3 short training phrases for an AI personality with the tone: ${profile.tone}`;
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ model: "gpt-4", messages: [{ role: "user", content: prompt }] })
+  });
+  const data = await res.json();
+  const output = data.choices?.[0]?.message?.content?.trim();
+  gptResults.textContent = output || "No response";
 };
+
+// === TAG EDITOR ===
+memoryLog.addEventListener("click", e => {
+  const div = e.target.closest(".memory-entry");
+  if (!div) return;
+  const idx = Array.from(memoryLog.children).indexOf(div);
+  const tags = prompt("Edit tags (comma-separated):", (echoMemory[idx].tags || []).join(", "));
+  if (tags !== null) {
+    echoMemory[idx].tags = tags.split(",").map(t => t.trim()).filter(Boolean);
+    localStorage.setItem("echoMemory", JSON.stringify(echoMemory));
+  }
+});
+
+// === EMOTION FILTER BAR ===
+const emotions = ["love", "sad", "strong", "comfort", "happy", "angry"];
+const filterBar = document.createElement("div");
+filterBar.style.display = "flex";
+filterBar.style.gap = "8px";
+filterBar.style.margin = "10px 0";
+emotions.forEach(emotion => {
+  const btn = document.createElement("button");
+  btn.textContent = emotion;
+  btn.onclick = () => {
+    memoryLog.innerHTML = "";
+    echoMemory.filter(m => getEmotion(m.echo) === emotion).forEach(entry => {
+      const div = document.createElement("div");
+      div.className = "memory-entry";
+      div.innerHTML = `<strong>You:</strong> ${entry.user}<br><strong>Echo:</strong> <span class="echo-line ${emotion}">${entry.echo}</span>`;
+      memoryLog.appendChild(div);
+    });
+  };
+  filterBar.appendChild(btn);
+});
+memoryLog.before(filterBar);
